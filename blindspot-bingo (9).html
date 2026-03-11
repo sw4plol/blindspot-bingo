@@ -1,0 +1,1221 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>BLINDSPOT</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Unbounded:wght@400;700;900&family=DM+Sans:wght@400;500;600&display=swap');
+
+:root {
+  --bg:     #09090b;
+  --surf:   #121216;
+  --card:   #18181f;
+  --border: #27272f;
+  --text:   #f4f4f8;
+  --muted:  #5c5c72;
+
+  /* Guess categories (roue) */
+  --g1:#ff4560; --g2:#ffb300; --g3:#00e096; --g4:#4da6ff; --g5:#b96fff;
+
+  /* Genre categories */
+  --qc:#ff6b35;
+  --rock:#e84393;
+  --summer:#ffd600;
+  --house:#00d4ff;
+  --eighties:#a259ff;
+}
+
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;overflow:hidden}
+
+.screen{display:none;flex-direction:column;height:100dvh;overflow-y:auto;overscroll-behavior:contain}
+.screen.active{display:flex}
+.inner{flex:1;display:flex;flex-direction:column;padding:14px 16px 36px;gap:14px}
+
+.topbar{display:flex;align-items:center;gap:10px;padding:16px 16px 0;flex-shrink:0}
+.back{width:38px;height:38px;border-radius:11px;background:var(--surf);border:1.5px solid var(--border);
+  display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:17px;
+  flex-shrink:0;transition:transform .12s}
+.back:active{transform:scale(.88)}
+.ptitle{font-family:'Unbounded',sans-serif;font-size:16px;font-weight:700;letter-spacing:-.3px}
+
+.btn{width:100%;padding:15px;border:none;border-radius:14px;
+  font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;
+  cursor:pointer;transition:transform .1s,filter .1s}
+.btn:active{transform:scale(.96);filter:brightness(.88)}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.btn-fire{background:linear-gradient(130deg,#ff4560,#ff9500);color:#fff}
+.btn-ghost{background:var(--surf);color:var(--text);border:1.5px solid var(--border)}
+.btn-spotify{background:#1db954;color:#fff}
+.btn-sm{padding:11px 14px;font-size:13px;border-radius:11px}
+
+/* ══ HOME ══ */
+#home{background:var(--bg)}
+.home-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:20px;padding:24px 20px;text-align:center;
+  background:radial-gradient(ellipse at 50% -10%,#1c0a12 0%,var(--bg) 58%)}
+
+.logo{position:relative;width:86px;height:86px;margin:0 auto}
+.logo-outer{width:86px;height:86px;border-radius:50%;
+  background:conic-gradient(var(--qc) 0 72deg,var(--rock) 72deg 144deg,var(--summer) 144deg 216deg,var(--house) 216deg 288deg,var(--eighties) 288deg 360deg)}
+.logo-inner{position:absolute;inset:12px;border-radius:50%;background:var(--bg);
+  display:flex;align-items:center;justify-content:center;font-size:26px}
+
+.gtitle{font-family:'Unbounded',sans-serif;font-size:clamp(36px,11vw,62px);
+  font-weight:900;letter-spacing:-3px;line-height:.9;color:var(--text)}
+.gtitle em{font-style:normal;color:var(--g1)}
+.gsub{font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin-top:6px}
+.gdesc{font-size:13px;color:var(--muted);max-width:260px;line-height:1.75}
+
+/* ══ GENRE SELECT ══ */
+#genre-select{background:var(--bg)}
+.genre-wrap{flex:1;display:flex;flex-direction:column;gap:0;padding:12px 16px 32px}
+.genre-intro{font-size:13px;color:var(--muted);margin-bottom:4px}
+.genre-grid{display:flex;flex-direction:column;gap:10px;margin-top:4px}
+
+.genre-card{border-radius:18px;border:2px solid var(--border);overflow:hidden;cursor:pointer;
+  transition:transform .15s,border-color .15s;position:relative}
+.genre-card:active{transform:scale(.97)}
+.genre-card-inner{padding:18px 18px 16px;display:flex;align-items:center;gap:14px}
+.genre-card-icon{font-size:32px;flex-shrink:0;width:52px;height:52px;border-radius:14px;
+  display:flex;align-items:center;justify-content:center}
+.genre-card-info{flex:1}
+.genre-card-name{font-family:'Unbounded',sans-serif;font-size:15px;font-weight:700;letter-spacing:-.3px}
+.genre-card-desc{font-size:11px;color:var(--muted);margin-top:3px;line-height:1.5}
+.genre-card-arrow{font-size:20px;color:var(--muted)}
+
+/* ══ SPOTIFY LOGIN ══ */
+#spotify-login{background:radial-gradient(ellipse at 50% 0%,#001a09 0%,var(--bg) 55%)}
+.login-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:22px;padding:28px 22px;text-align:center}
+.sp-icon{font-size:58px}
+.login-title{font-family:'Unbounded',sans-serif;font-size:22px;font-weight:700;letter-spacing:-.5px}
+.login-genre-badge{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;
+  border-radius:20px;font-size:14px;font-weight:600;border:2px solid}
+.login-desc{font-size:13px;color:var(--muted);max-width:260px;line-height:1.7}
+#login-status{font-size:12px;color:var(--muted);min-height:18px}
+
+/* ══ PLAYERS SETUP ══ */
+#players-setup{}
+.p-list{display:flex;flex-direction:column;gap:8px}
+.p-row{display:flex;align-items:center;gap:10px;background:var(--card);
+  border:1.5px solid var(--border);border-radius:12px;padding:10px 12px}
+.p-av{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-size:13px;font-weight:800;font-family:'Unbounded',sans-serif;flex-shrink:0}
+.p-name-t{flex:1;font-size:14px;font-weight:500}
+.p-del{background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;line-height:1}
+.add-row{display:flex;gap:8px}
+.add-row input{flex:1}
+input[type=text]{width:100%;background:var(--surf);border:1.5px solid var(--border);
+  border-radius:12px;padding:12px 13px;color:var(--text);
+  font-family:'DM Sans',sans-serif;font-size:14px;outline:none;transition:border-color .2s}
+input:focus{border-color:var(--g1)}
+input::placeholder{color:var(--muted)}
+.add-btn{border:none;border-radius:12px;color:#fff;font-size:20px;font-weight:700;
+  width:44px;height:44px;flex-shrink:0;cursor:pointer;transition:transform .12s;display:flex;align-items:center;justify-content:center}
+.add-btn:active{transform:scale(.9)}
+
+.flabel{font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--muted)}
+
+/* Track count */
+.num-row{display:flex;align-items:center;gap:12px}
+.num-btn{width:38px;height:38px;border-radius:10px;background:var(--surf);border:1.5px solid var(--border);
+  font-size:18px;color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:transform .1s;flex-shrink:0}
+.num-btn:active{transform:scale(.88)}
+.num-val{font-family:'Unbounded',sans-serif;font-size:22px}
+
+/* Loading */
+.loading{display:flex;align-items:center;justify-content:center;gap:10px;
+  padding:20px;color:var(--muted);font-size:13px}
+.spin{width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--g3);
+  border-radius:50%;animation:rot .7s linear infinite}
+@keyframes rot{to{transform:rotate(360deg)}}
+
+/* ══ SPIN SCREEN ══ */
+#spin-screen{background:var(--bg)}
+.spin-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:16px;padding:16px;background:radial-gradient(ellipse at 50% 0%,#140a04 0%,var(--bg) 55%)}
+
+.genre-banner{display:flex;align-items:center;gap:8px;padding:8px 14px;border-radius:12px;
+  border:2px solid;font-size:13px;font-weight:600}
+
+.wheel-wrap{position:relative;width:min(74vw,270px);height:min(74vw,270px)}
+.wptr{position:absolute;top:-14px;left:50%;transform:translateX(-50%);
+  font-size:22px;z-index:4;filter:drop-shadow(0 2px 6px rgba(0,0,0,.8))}
+canvas#wcanvas{border-radius:50%;box-shadow:0 0 0 3px #1e1e2a,0 0 40px rgba(0,0,0,.9)}
+.wcenter{position:absolute;inset:43%;border-radius:50%;background:var(--bg);border:3px solid #1e1e2a;z-index:3}
+
+.spin-btn{width:min(74vw,270px);padding:16px;border:none;border-radius:16px;
+  font-family:'Unbounded',sans-serif;font-size:15px;font-weight:700;letter-spacing:.5px;
+  color:#fff;cursor:pointer;transition:transform .12s;
+  box-shadow:0 4px 20px rgba(255,69,96,.3)}
+.spin-btn:active{transform:scale(.96)}
+.spin-btn:disabled{opacity:.35;cursor:not-allowed;box-shadow:none}
+
+.result-pill{width:min(74vw,270px);padding:12px 16px;border-radius:14px;border:2px solid;
+  text-align:center;opacity:0;transition:opacity .3s;pointer-events:none}
+.result-pill.show{opacity:1;pointer-events:auto}
+.rcat{font-family:'Unbounded',sans-serif;font-size:15px;font-weight:700;letter-spacing:-.3px}
+.rhint{font-size:11px;margin-top:3px;opacity:.7}
+
+/* ══ PLAY SCREEN ══ */
+#play-screen{background:var(--bg)}
+.play-wrap{flex:1;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:16px;padding:16px;text-align:center}
+
+.mystery-art{width:min(64vw,220px);height:min(64vw,220px);border-radius:18px;
+  background:var(--card);border:2px solid var(--border);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:8px;flex-shrink:0;position:relative;overflow:hidden}
+.mystery-stripes{position:absolute;inset:0;
+  background:repeating-linear-gradient(45deg,#141420 0,#141420 7px,#1c1c2a 7px,#1c1c2a 14px)}
+.mystery-note{font-size:44px;position:relative;z-index:1}
+.mystery-tag{font-size:9px;letter-spacing:3px;text-transform:uppercase;
+  color:rgba(255,255,255,.2);position:relative;z-index:1}
+
+.guess-pill{display:flex;align-items:center;gap:8px;padding:9px 15px;
+  border-radius:11px;border:2px solid;font-size:13px;font-weight:600}
+
+/* Controls */
+.ctrl-wrap{width:100%;max-width:300px;background:var(--card);
+  border:1.5px solid var(--border);border-radius:16px;padding:13px 15px;display:flex;flex-direction:column;gap:10px}
+.ctrl-hidden{font-size:11px;color:var(--muted);text-align:center;letter-spacing:1px}
+.progress{height:3px;border-radius:2px;background:var(--border);overflow:hidden}
+.progress-fill{height:100%;border-radius:2px;transition:width .5s linear;width:0}
+.times{display:flex;justify-content:space-between;font-size:10px;color:var(--muted)}
+.ctrl-btns{display:flex;align-items:center;justify-content:center;gap:14px}
+.cbtn{background:var(--surf);border:1.5px solid var(--border);border-radius:50%;
+  width:44px;height:44px;display:flex;align-items:center;justify-content:center;
+  font-size:18px;cursor:pointer;transition:transform .1s}
+.cbtn:active{transform:scale(.88)}
+.cbtn.pp{width:52px;height:52px;font-size:22px;border-radius:50%}
+
+.iframe-wrap{width:100%;max-width:300px;border-radius:14px;overflow:hidden;position:relative}
+.iframe-mask{position:absolute;top:0;left:48px;right:0;bottom:0;background:var(--card);
+  display:flex;align-items:center;justify-content:center;pointer-events:none;border-radius:0 14px 14px 0}
+.iframe-mask span{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted)}
+
+.play-actions{display:flex;gap:8px;width:100%;max-width:300px}
+
+/* ══ PLAYER SELECT ══ */
+#player-select{}
+.ps-wrap{flex:1;display:flex;flex-direction:column;gap:10px;padding:10px 16px 30px}
+.ps-grid{display:flex;flex-direction:column;gap:8px}
+.ps-row{display:flex;align-items:center;gap:12px;background:var(--card);
+  border:2px solid var(--border);border-radius:14px;padding:12px 14px;cursor:pointer;transition:all .13s}
+.ps-row:active{transform:scale(.97)}
+.ps-av{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-size:13px;font-weight:800;font-family:'Unbounded',sans-serif;flex-shrink:0}
+.ps-info{flex:1}
+.ps-name{font-size:15px;font-weight:600}
+.ps-sub{font-size:10px;color:var(--muted);margin-top:2px}
+
+/* ══ BINGO CARD ══ */
+#bingo-card{}
+.bc-wrap{flex:1;display:flex;flex-direction:column;gap:8px;padding:8px 12px 26px}
+.bc-top{display:flex;align-items:center;gap:9px}
+.bc-name{font-family:'Unbounded',sans-serif;font-size:15px;font-weight:700;letter-spacing:-.3px;flex:1}
+.bc-pts{padding:3px 10px;border-radius:20px;font-weight:700;font-size:12px}
+.bc-legend{display:flex;gap:4px;flex-wrap:wrap}
+.bcleg{display:flex;align-items:center;gap:3px;font-size:9px;padding:2px 7px;
+  border-radius:20px;background:var(--surf);border:1px solid var(--border);color:var(--muted)}
+.bcdot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.bletters{display:grid;grid-template-columns:repeat(5,1fr);gap:3px;margin-bottom:1px}
+.blet{font-family:'Unbounded',sans-serif;font-size:16px;font-weight:700;text-align:center;color:var(--muted)}
+.bgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:3px}
+.bcell{aspect-ratio:1;border-radius:8px;background:var(--card);border:2px solid var(--border);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  cursor:pointer;transition:all .15s;padding:2px;position:relative;overflow:hidden;user-select:none}
+.bcell:active{transform:scale(.9)}
+.bcell .ce{font-size:clamp(12px,3.5vw,17px);line-height:1}
+.bcell .cl{font-size:clamp(5px,1.2vw,8px);color:var(--muted);text-align:center;margin-top:2px;line-height:1.3}
+.bcell.marked::after{content:'✓';position:absolute;font-family:'Unbounded',sans-serif;
+  font-size:clamp(15px,4.5vw,22px);color:rgba(0,0,0,.2);font-weight:900}
+.bcell.bingo-line{animation:bpop .35s ease}
+@keyframes bpop{50%{transform:scale(1.12)}}
+.bcell.tap-me{box-shadow:0 0 0 3px currentColor}
+.bc-hint{font-size:10px;text-align:center;min-height:14px}
+.bc-actions{display:flex;gap:8px}
+
+/* ══ WIN ══ */
+#win-screen{background:radial-gradient(ellipse at 50% 15%,#0e1c00 0%,var(--bg) 60%)}
+.win-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:14px;text-align:center;padding:26px 20px}
+.win-burst{font-size:56px;animation:wb .5s ease infinite alternate}
+@keyframes wb{to{transform:scale(1.12) rotate(8deg)}}
+.win-big{font-family:'Unbounded',sans-serif;font-size:clamp(50px,15vw,82px);
+  font-weight:900;letter-spacing:-4px;color:#c8ff3e;text-shadow:0 0 50px rgba(200,255,62,.5);
+  animation:wg 1s ease infinite alternate}
+@keyframes wg{to{text-shadow:0 0 80px rgba(200,255,62,.9)}}
+.win-who{font-size:19px;font-weight:600}
+.win-sub{font-size:12px;color:var(--muted)}
+
+/* ══ LEADERBOARD ══ */
+#leaderboard{}
+.lb-list{display:flex;flex-direction:column;gap:8px}
+.lb-row{display:flex;align-items:center;gap:11px;padding:12px 13px;
+  background:var(--card);border-radius:12px;border:2px solid var(--border)}
+.lb-rank{font-family:'Unbounded',sans-serif;font-size:20px;font-weight:700;color:var(--muted);width:24px}
+.lb-av{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-size:12px;font-weight:800;font-family:'Unbounded',sans-serif;flex-shrink:0}
+.lb-info{flex:1}
+.lb-name{font-weight:600;font-size:14px}
+.lb-cats{font-size:10px;color:var(--muted);margin-top:2px}
+.lb-score{font-family:'Unbounded',sans-serif;font-size:20px}
+
+/* ══ REVEAL MODAL ══ */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:50;
+  display:flex;align-items:center;justify-content:center;padding:22px;
+  opacity:0;pointer-events:none;transition:opacity .25s}
+.overlay.show{opacity:1;pointer-events:auto}
+.modal{background:var(--card);border:2px solid var(--border);border-radius:20px;
+  padding:22px 20px;width:100%;max-width:320px;text-align:center;display:flex;flex-direction:column;gap:12px}
+.modal-title{font-family:'Unbounded',sans-serif;font-size:18px;font-weight:700;letter-spacing:-.3px}
+.rev-img{width:90px;height:90px;border-radius:12px;object-fit:cover;margin:0 auto}
+.rev-track{font-size:16px;font-weight:700}
+.rev-artist{font-size:13px;color:var(--muted)}
+.rev-year{font-size:12px;font-weight:600}
+
+/* ══ TOAST ══ */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);
+  background:#c8ff3e;color:#000;font-weight:700;font-size:13px;
+  padding:10px 20px;border-radius:30px;transition:transform .28s;z-index:100;
+  white-space:nowrap;pointer-events:none}
+.toast.show{transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<!-- ══ HOME ══ -->
+<div id="home" class="screen active">
+  <div class="home-wrap">
+    <div class="logo">
+      <div class="logo-outer"></div>
+      <div class="logo-inner">🎧</div>
+    </div>
+    <div>
+      <div class="gtitle">BLIND<em>SPOT</em></div>
+      <div class="gsub">Le bingo musical aveugle</div>
+    </div>
+    <p class="gdesc">Connecte Spotify, choisis ton genre, écoute sans voir, devine !</p>
+    <button class="btn btn-spotify" id="home-login-btn" onclick="goTo('spotify-login')">🎵 Connecter Spotify</button>
+    <button class="btn btn-ghost" onclick="goTo('leaderboard')">🏆 Classement</button>
+  </div>
+</div>
+
+<!-- ══ GENRE SELECT ══ -->
+<div id="genre-select" class="screen">
+  <div class="topbar">
+    <div class="back" onclick="goTo('home')">←</div>
+    <div class="ptitle">Choisis le style</div>
+  </div>
+  <div class="genre-wrap">
+    <p class="genre-intro">Toute la partie sera dans ce genre musical.</p>
+    <div class="genre-grid" id="genre-grid"></div>
+  </div>
+</div>
+
+<!-- ══ SPOTIFY LOGIN ══ -->
+<div id="spotify-login" class="screen">
+  <div class="topbar">
+    <div class="back" onclick="goTo('home')">←</div>
+    <div class="ptitle">Connexion</div>
+  </div>
+  <div class="login-wrap">
+    <div class="sp-icon">🎵</div>
+    <div class="login-title">Connecte Spotify</div>
+    <div class="login-genre-badge" id="login-genre-badge">—</div>
+    <p class="login-desc">On va chercher des chansons de ce genre directement depuis Spotify.</p>
+    <button class="btn btn-spotify" onclick="loginSpotify()" style="max-width:280px">Se connecter avec Spotify</button>
+    <div id="login-status"></div>
+    <button class="btn btn-ghost btn-sm" onclick="goTo('genre-select')" style="max-width:280px">← Retour</button>
+  </div>
+</div>
+
+<!-- ══ PLAYERS SETUP ══ -->
+<div id="players-setup" class="screen">
+  <div class="topbar">
+    <div class="back" onclick="logoutSpotify()">←</div>
+    <div class="ptitle">Joueurs</div>
+    <div id="sp-user" style="font-size:11px;margin-left:auto"></div>
+  </div>
+  <div class="inner">
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <div class="flabel">Partie en cours</div>
+      <div id="setup-genre-badge" style="display:inline-flex;align-items:center;gap:8px;padding:9px 14px;border-radius:12px;border:2px solid;font-size:13px;font-weight:600;width:fit-content">—</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <div class="flabel">Joueurs</div>
+      <div class="p-list" id="p-list"></div>
+      <div class="add-row">
+        <input type="text" id="new-p" placeholder="Nom du joueur…" maxlength="16" onkeydown="if(event.key==='Enter')addPlayer()">
+        <button class="add-btn" id="add-btn-el" onclick="addPlayer()">+</button>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <div class="flabel">Nombre de chansons</div>
+      <div class="num-row">
+        <div class="num-btn" onclick="changeCount(-5)">−</div>
+        <div style="flex:1;text-align:center">
+          <span class="num-val" id="track-count">20</span>
+          <span style="font-size:12px;color:var(--muted)"> titres</span>
+        </div>
+        <div class="num-btn" onclick="changeCount(+5)">+</div>
+      </div>
+    </div>
+    <div id="load-status" class="loading" style="display:none"><div class="spin"></div> Chargement des titres…</div>
+    <button class="btn btn-fire" onclick="startGame()" style="margin-top:auto">▶ Démarrer</button>
+  </div>
+</div>
+
+<!-- ══ SPIN ══ -->
+<div id="spin-screen" class="screen">
+  <div class="topbar">
+    <div class="back" onclick="goTo('player-select')">←</div>
+    <div class="ptitle">Tour <span id="spin-num">1</span></div>
+    <div id="spin-rem" style="font-size:11px;color:var(--muted);margin-left:auto"></div>
+  </div>
+  <div class="spin-wrap">
+    <div class="genre-banner" id="spin-genre-banner">—</div>
+    <div class="wheel-wrap">
+      <div class="wptr">▼</div>
+      <canvas id="wcanvas" width="270" height="270"></canvas>
+      <div class="wcenter"></div>
+    </div>
+    <button class="spin-btn" id="spin-btn" onclick="doSpin()">⚡ TOURNER</button>
+    <div class="result-pill" id="result-pill">
+      <div class="rcat" id="rcat"></div>
+      <div class="rhint" id="rhint"></div>
+    </div>
+    <button class="btn btn-ghost" id="to-play-btn" style="max-width:270px;display:none" onclick="goTo('play-screen')">
+      🎵 Lancer la chanson →
+    </button>
+  </div>
+</div>
+
+<!-- ══ PLAY ══ -->
+<div id="play-screen" class="screen">
+  <div class="topbar">
+    <div class="back" onclick="goTo('spin-screen')">←</div>
+    <div class="ptitle">Écoute !</div>
+    <div id="play-num" style="font-size:11px;color:var(--muted);margin-left:auto"></div>
+  </div>
+  <div class="play-wrap">
+    <div class="mystery-art">
+      <div class="mystery-stripes"></div>
+      <div class="mystery-note">🎧</div>
+      <div class="mystery-tag">??? — ???</div>
+    </div>
+    <div class="guess-pill" id="play-guess-pill">—</div>
+
+    <!-- SDK controls -->
+    <div class="ctrl-wrap" id="sdk-ctrl" style="display:none">
+      <div class="ctrl-hidden">🔒 Chanson masquée</div>
+      <div class="progress" id="prog-bar"><div class="progress-fill" id="prog-fill"></div></div>
+      <div class="times"><span id="t-cur">0:00</span><span id="t-tot">0:00</span></div>
+      <div class="ctrl-btns">
+        <div class="cbtn" onclick="seekBack()">⏪</div>
+        <div class="cbtn pp" id="pp-btn" onclick="togglePP()" style="background:var(--g3);border-color:var(--g3)">▶</div>
+        <div class="cbtn" onclick="seekFwd()">⏩</div>
+      </div>
+    </div>
+
+    <!-- iFrame fallback -->
+    <div id="iframe-player" style="width:100%;max-width:300px;display:none">
+      <div class="iframe-wrap">
+        <iframe id="sp-iframe" style="border-radius:14px;display:block" width="100%" height="80"
+          frameBorder="0" allow="autoplay;clipboard-write;encrypted-media;fullscreen;picture-in-picture"
+          loading="lazy"></iframe>
+        <div class="iframe-mask"><span>??? — ???</span></div>
+      </div>
+    </div>
+
+    <div class="play-actions">
+      <button class="btn btn-ghost btn-sm" style="flex:1" onclick="goTo('spin-screen')">← Retour</button>
+      <button class="btn btn-fire btn-sm" style="flex:1.4" onclick="goTo('player-select')">✅ Répondre →</button>
+    </div>
+    <button class="btn btn-ghost btn-sm" style="max-width:300px;opacity:.55" onclick="revealTrack()">
+      👁 Révéler la chanson
+    </button>
+  </div>
+</div>
+
+<!-- ══ PLAYER SELECT ══ -->
+<div id="player-select" class="screen">
+  <div class="topbar">
+    <div class="back" onclick="goTo('play-screen')">←</div>
+    <div class="ptitle">Qui a bon ?</div>
+  </div>
+  <div class="ps-wrap">
+    <div class="guess-pill" id="ps-guess-pill" style="margin-bottom:2px">—</div>
+    <p style="font-size:12px;color:var(--muted)">Passe le téléphone au joueur qui a bien répondu 🎯</p>
+    <div class="ps-grid" id="ps-grid"></div>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-top:auto;padding-top:8px">
+      <button class="btn btn-fire" onclick="nextTurn()">⏭ Tour suivant</button>
+      <button class="btn btn-ghost btn-sm" onclick="goTo('leaderboard')">📊 Classement</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ BINGO CARD ══ -->
+<div id="bingo-card" class="screen">
+  <div class="topbar" style="padding-bottom:0">
+    <div class="back" onclick="goTo('player-select')">←</div>
+    <div class="ptitle" id="bc-title"></div>
+    <div class="bc-pts" id="bc-pts">0 pts</div>
+  </div>
+  <div class="bc-wrap">
+    <div class="bc-legend" id="bc-legend"></div>
+    <div class="bletters">
+      <div class="blet">B</div><div class="blet">I</div><div class="blet">N</div><div class="blet">G</div><div class="blet">O</div>
+    </div>
+    <div class="bgrid" id="bgrid"></div>
+    <div class="bc-hint" id="bc-hint"></div>
+    <div class="bc-actions">
+      <button class="btn btn-ghost btn-sm" style="flex:1" onclick="goTo('player-select')">← Joueurs</button>
+      <button class="btn btn-sm" id="mark-btn" style="flex:1.5" onclick="toggleMark()">☑ Cocher</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ WIN ══ -->
+<div id="win-screen" class="screen">
+  <div class="win-wrap">
+    <div class="win-burst">🎊</div>
+    <div class="win-big">BINGO!</div>
+    <div class="win-who" id="win-who"></div>
+    <div class="win-sub" id="win-sub"></div>
+    <button class="btn btn-fire" onclick="goTo('player-select')" style="max-width:290px">🎲 Continuer</button>
+    <button class="btn btn-ghost" onclick="newGame()" style="max-width:290px">🔄 Nouvelle partie</button>
+  </div>
+</div>
+
+<!-- ══ LEADERBOARD ══ -->
+<div id="leaderboard" class="screen">
+  <div class="topbar">
+    <div class="back" onclick="goBack()">←</div>
+    <div class="ptitle">Classement</div>
+  </div>
+  <div class="inner">
+    <div class="lb-list" id="lb-list"></div>
+    <button class="btn btn-ghost" onclick="goBack()" style="margin-top:auto">← Retour</button>
+  </div>
+</div>
+
+<!-- ══ REVEAL MODAL ══ -->
+<div class="overlay" id="rev-overlay" onclick="closeReveal()">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-title">🎤 La chanson était…</div>
+    <div id="rev-content"></div>
+    <button class="btn btn-fire" onclick="closeReveal()">Fermer</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════
+// CONSTANTS
+// ══════════════════════════════════════════
+const CLIENT_ID   = '7a1849e4efa8458085c8e71895cea7da';
+const REDIRECT_URI = 'https://sw4plol.github.io/blindspot-bingo/blindspot-bingo.html';
+
+// Genre categories — each has multiple Spotify playlist IDs to search
+const GENRES = [
+  {
+    id:'qc', label:'Quebecois', emoji:'🎉', color:'#ff6b35', bg:'rgba(255,107,53,.15)',
+    desc:'Pop, rock et chanson du Quebec',
+    searches:['genre:french pop','Cowboys Fringants','Coeur de pirate','Les Cowboys Fringants','Loud Loud']
+  },
+  {
+    id:'rock', label:'Rock', emoji:'🎸', color:'#e84393', bg:'rgba(232,67,147,.15)',
+    desc:'Classic rock, indie, alternatif',
+    searches:['genre:rock','rock','classic rock','hard rock','rock anthems']
+  },
+  {
+    id:'summer', label:'Summer Hits', emoji:'☀️', color:'#ffd600', bg:'rgba(255,214,0,.15)',
+    desc:"Les bangers de ete",
+    searches:['genre:pop','summer','summer hits','beach party','party anthem']
+  },
+  {
+    id:'house', label:'House / Electro', emoji:'🏠', color:'#00d4ff', bg:'rgba(0,212,255,.15)',
+    desc:'Dance, house, electronique',
+    searches:['genre:house','genre:edm','David Guetta','Calvin Harris','genre:electronic']
+  },
+  {
+    id:'eighties', label:'Annees 80s', emoji:'💃', color:'#a259ff', bg:'rgba(162,89,255,.15)',
+    desc:'Les hits des annees 80',
+    searches:['year:1980-1989','80s','genre:new wave','Michael Jackson','Madonna']
+  },
+];
+
+// Guess wheel categories
+const GUESSES = [
+  { id:'g1', label:'Annee exacte',     emoji:'📅', color:'#ff4560', hint:'Annee exacte de la chanson' },
+  { id:'g2', label:'Decennie',         emoji:'🗓️',  color:'#ffb300', hint:'La decennie (ex: annees 80)' },
+  { id:'g3', label:'Artiste / Groupe', emoji:'🎤', color:'#00e096', hint:'Nomme l artiste ou le groupe' },
+  { id:'g4', label:'Titre',            emoji:'🎵', color:'#4da6ff', hint:'Donne le titre exact' },
+  { id:'g5', label:'+/- 3 ans',        emoji:'⏱️', color:'#b96fff', hint:'Annee a +/- 3 ans pres' },
+];
+
+const AV_COLORS = ['#ff4560','#ffb300','#00e096','#4da6ff','#b96fff','#ff8c00','#00c8ff','#ff69b4'];
+
+let G = {
+  token: null,
+  user: null,
+  selectedGenre: null,
+  trackCount: 20,
+  gameTracks: [],
+  currentTrackIdx: 0,
+  currentGuess: null,
+  players: [],
+  currentPlayer: null,
+  prevScreen: 'home',
+  markMode: false,
+  turnNum: 1,
+  sdkReady: false,
+  player: null,
+  deviceId: null,
+  isPlaying: false,
+  trackDur: 0,
+  trackPos: 0,
+  progTimer: null,
+};
+
+// ══════════════════════════════════════════
+// BUILD GENRE GRID
+// ══════════════════════════════════════════
+(function(){
+  const grid = document.getElementById('genre-grid');
+  GENRES.forEach(g => {
+    const el = document.createElement('div');
+    el.className = 'genre-card';
+    el.style.cssText = `border-color:${g.color}30;background:${g.bg}`;
+    el.innerHTML = `<div class="genre-card-inner">
+      <div class="genre-card-icon" style="background:${g.bg};color:${g.color}">${g.emoji}</div>
+      <div class="genre-card-info">
+        <div class="genre-card-name" style="color:${g.color}">${g.label}</div>
+        <div class="genre-card-desc">${g.desc}</div>
+      </div>
+      <div class="genre-card-arrow">→</div>
+    </div>`;
+    el.onclick = () => selectGenre(g.id);
+    grid.appendChild(el);
+  });
+})();
+
+// ══════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════
+function goTo(s) {
+  G.prevScreen = document.querySelector('.screen.active')?.id || 'home';
+  document.querySelectorAll('.screen').forEach(x => x.classList.remove('active'));
+  document.getElementById(s).classList.add('active');
+  window.scrollTo(0,0);
+  ({
+    'players-setup': initPlayersSetup,
+    'spin-screen':   initSpin,
+    'play-screen':   initPlay,
+    'player-select': renderPS,
+    'bingo-card':    renderCard,
+    'leaderboard':   renderLB,
+  })[s]?.();
+}
+function goBack() { goTo(G.prevScreen || 'home'); }
+
+// ══════════════════════════════════════════
+// GENRE SELECT
+// ══════════════════════════════════════════
+function selectGenre(id) {
+  G.selectedGenre = GENRES.find(g => g.id === id);
+  goTo('players-setup');
+}
+
+// ══════════════════════════════════════════
+// PKCE OAUTH
+// ══════════════════════════════════════════
+function rndStr(len=128) {
+  const c='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
+  const a = new Uint8Array(len); crypto.getRandomValues(a);
+  return [...a].map(b=>c[b%c.length]).join('');
+}
+async function challenge(v) {
+  const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(v));
+  return btoa(String.fromCharCode(...new Uint8Array(d))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+
+async function loginSpotify() {
+  document.getElementById('login-status').textContent = 'Redirection…';
+  const verifier = rndStr();
+  sessionStorage.setItem('pkce_v', verifier);
+  const ch = await challenge(verifier);
+  const p = new URLSearchParams({
+    client_id: CLIENT_ID,
+    response_type: 'code',
+    redirect_uri: REDIRECT_URI,
+    code_challenge_method: 'S256',
+    code_challenge: ch,
+    scope: 'streaming user-read-email user-read-private user-read-playback-state user-modify-playback-state playlist-read-private user-library-read',
+  });
+  // Save genre before redirect (page will reload)
+  if (G.selectedGenre) sessionStorage.setItem('pending_genre', G.selectedGenre.id);
+  window.location.href = 'https://accounts.spotify.com/authorize?' + p;
+}
+
+async function handleCallback() {
+  // Clean URL immediately - critical!
+  const p = new URLSearchParams(window.location.search);
+  const code = p.get('code'), err = p.get('error');
+  window.history.replaceState({}, '', window.location.pathname);
+
+  if (err || !code) { goTo('home'); return; }
+
+  const verifier = sessionStorage.getItem('pkce_v');
+  if (!verifier) {
+    // No verifier = already processed, use saved token
+    const saved = sessionStorage.getItem('sp_token');
+    if (saved) { G.token = saved; initSDK(); goTo('genre-select'); }
+    else { goTo('home'); }
+    return;
+  }
+
+  goTo('spotify-login');
+  document.getElementById('login-status').textContent = 'Connexion...';
+
+  try {
+    const res = await fetch('https://accounts.spotify.com/api/token', {
+      method: 'POST',
+      headers: {'Content-Type':'application/x-www-form-urlencoded'},
+      body: new URLSearchParams({ client_id:CLIENT_ID, grant_type:'authorization_code',
+        code, redirect_uri:REDIRECT_URI, code_verifier:verifier })
+    });
+    const data = await res.json();
+    if (!data.access_token) throw new Error(data.error_description || 'Auth failed');
+    G.token = data.access_token;
+    sessionStorage.setItem('sp_token', data.access_token);
+    sessionStorage.setItem('sp_token_time', Date.now().toString());
+    sessionStorage.removeItem('pkce_v');
+    const u = await spGet('https://api.spotify.com/v1/me');
+    G.user = u;
+    document.getElementById('sp-user') && (document.getElementById('sp-user').textContent = '+ ' + u.display_name);
+    initSDK();
+    const savedGenre = sessionStorage.getItem('pending_genre');
+    if (savedGenre) {
+      G.selectedGenre = GENRES.find(g=>g.id===savedGenre);
+      sessionStorage.removeItem('pending_genre');
+      goTo('players-setup');
+    } else {
+      goTo('genre-select');
+    }
+  } catch(e) {
+    document.getElementById('login-status').textContent = 'Erreur: ' + e.message;
+    showToast('Erreur auth: ' + e.message);
+  }
+}
+
+async function spGet(url) {
+  const token = G.token || sessionStorage.getItem('sp_token');
+  if (!token) { showToast('Non connecte!'); goTo('home'); throw new Error('No token'); }
+  G.token = token;
+  const r = await fetch(url, { headers:{ Authorization: 'Bearer ' + token } });
+  if (r.status === 401 || r.status === 403) {
+    G.token = null; sessionStorage.removeItem('sp_token');
+    showToast('Session expiree! Reconnecte-toi.'); goTo('home');
+    throw new Error('Token expired');
+  }
+  if (!r.ok) {
+    const errBody = await r.text().catch(()=>'');
+    // 400 with "Invalid limit" = token expired (Spotify bug)
+    if (errBody.includes('Invalid limit') || errBody.includes('Invalid access token')) {
+      G.token = null; sessionStorage.removeItem('sp_token');
+      showToast('Token expire! Reconnecte-toi.'); goTo('home');
+      throw new Error('Token expired: ' + errBody);
+    }
+    throw new Error('HTTP ' + r.status + ' ' + errBody.substring(0,100));
+  }
+  if (r.status === 204) return null;
+  return r.json();
+}
+async function spPut(url, body) {
+  await fetch(url, { method:'PUT', headers:{ Authorization:`Bearer ${G.token}`, 'Content-Type':'application/json' }, body:JSON.stringify(body) });
+}
+
+function logoutSpotify() { G.token = null; G.user = null; G.selectedGenre = null; sessionStorage.removeItem('sp_token'); goTo('home'); }
+
+// ══════════════════════════════════════════
+// PLAYERS SETUP
+// ══════════════════════════════════════════
+function initPlayersSetup() {
+  const g = G.selectedGenre;
+  if (g) {
+    const badge = document.getElementById('setup-genre-badge');
+    badge.style.cssText = `background:${g.bg};border-color:${g.color};color:${g.color};display:inline-flex;align-items:center;gap:8px;padding:9px 14px;border-radius:12px;border:2px solid;font-size:13px;font-weight:600;width:fit-content`;
+    badge.textContent = g.emoji + ' ' + g.label;
+    document.getElementById('add-btn-el').style.background = g.color;
+  }
+  if (G.user) document.getElementById('sp-user').textContent = '✓ ' + G.user.display_name;
+  renderPList();
+}
+
+function renderPList() {
+  const el = document.getElementById('p-list'); el.innerHTML = '';
+  G.players.forEach((p,i) => {
+    const r = document.createElement('div'); r.className = 'p-row';
+    r.innerHTML = `<div class="p-av" style="background:${p.color}20;color:${p.color};border:2px solid ${p.color}40">${p.name[0].toUpperCase()}</div>
+      <span class="p-name-t">${esc(p.name)}</span>
+      <button class="p-del" onclick="removePlayer(${i})">✕</button>`;
+    el.appendChild(r);
+  });
+}
+function addPlayer() {
+  const inp = document.getElementById('new-p');
+  const name = inp.value.trim();
+  if (!name) return;
+  if (G.players.length >= 8) { showToast('Max 8 joueurs'); return; }
+  G.players.push({ name, color:AV_COLORS[G.players.length%AV_COLORS.length], card:null, marked:[], score:0, bingos:0 });
+  inp.value = ''; renderPList();
+}
+function removePlayer(i) { G.players.splice(i,1); renderPList(); }
+function changeCount(d) { G.trackCount = Math.max(5,Math.min(50,G.trackCount+d)); document.getElementById('track-count').textContent = G.trackCount; }
+
+async function startGame() {
+  if (!G.selectedGenre) { showToast('Choisis un genre !'); return; }
+  if (G.players.length < 1) { showToast('Ajoute au moins 1 joueur !'); return; }
+
+  const ls = document.getElementById('load-status');
+  ls.style.display = 'flex';
+  ls.querySelector('div:last-child').textContent = 'Token: ' + (G.token ? 'OK' : 'MANQUANT');
+
+  // Try to re-fetch token from session if missing
+  if (!G.token) {
+    const t = sessionStorage.getItem('sp_token');
+    if (t) { G.token = t; }
+    else { ls.style.display='none'; showToast('Non connecte! Reconnecte Spotify.'); goTo('home'); return; }
+  }
+
+  try {
+    const g = G.selectedGenre;
+    let tracks = [];
+    let searchLog = [];
+
+    // Test token first
+    try {
+      await spGet('https://api.spotify.com/v1/me');
+      ls.querySelector('div:last-child').textContent = 'Connexion OK, recherche...';
+    } catch(e) {
+      ls.style.display='none';
+      showToast('Token invalide: ' + e.message);
+      return;
+    }
+
+    // Search Spotify with multiple queries for this genre
+    for (const q of g.searches) {
+      if (tracks.length >= 100) break;
+      try {
+        ls.querySelector('div:last-child').textContent = 'Recherche: ' + q.substring(0,30) + '... (' + tracks.length + ' titres)';
+        const data = await spGet('https://api.spotify.com/v1/search?q=' + encodeURIComponent(q) + '&type=track&limit=20');
+        const found = data.tracks?.items?.length || 0;
+        searchLog.push(q + ':' + found);
+        if (data.tracks?.items) {
+          data.tracks.items.forEach(t => {
+            if (t?.id && t.name && !tracks.find(x=>x.id===t.id)) tracks.push(t);
+          });
+        }
+      } catch(e) {
+        searchLog.push(q + ':ERR(' + e.message + ')');
+        console.warn('Search failed for:', q, e);
+      }
+    }
+
+    console.log('Search log:', searchLog.join(' | '));
+    ls.querySelector('div:last-child').textContent = 'Resultat: ' + tracks.length + ' titres';
+    await new Promise(r => setTimeout(r, 800));
+
+    if (tracks.length < 5) { ls.style.display='none'; showToast('(' + tracks.length + ' titres) Log: ' + searchLog.slice(0,2).join(' ')); return; }
+
+    G.gameTracks = shuffle([...tracks]).slice(0, Math.min(G.trackCount, tracks.length));
+    G.currentTrackIdx = 0;
+    G.turnNum = 1;
+    G.currentGuess = null;
+
+    G.players.forEach(p => {
+      p.card = genCard();
+      p.marked = new Array(25).fill(null);
+      p.score = 0; p.bingos = 0;
+    });
+
+    ls.style.display = 'none';
+    goTo('spin-screen');
+  } catch(e) {
+    ls.style.display = 'none';
+    showToast('Erreur de chargement');
+    console.error(e);
+  }
+}
+
+// ══════════════════════════════════════════
+// SPOTIFY SDK
+// ══════════════════════════════════════════
+function initSDK() {
+  if (G.sdkReady || G.player) return;
+  window.onSpotifyWebPlaybackSDKReady = () => {
+    G.player = new Spotify.Player({
+      name:'Blindspot Bingo',
+      getOAuthToken: cb => cb(G.token),
+      volume: 0.8
+    });
+    G.player.addListener('ready', ({device_id}) => { G.deviceId=device_id; G.sdkReady=true; });
+    G.player.addListener('player_state_changed', st => {
+      if (!st) return;
+      G.isPlaying = !st.paused;
+      G.trackDur = st.duration/1000;
+      G.trackPos = st.position/1000;
+      updateCtrlUI();
+    });
+    G.player.connect();
+  };
+  if (!document.getElementById('sdk-script')) {
+    const s = document.createElement('script');
+    s.id = 'sdk-script';
+    s.src = 'https://sdk.scdn.co/spotify-player.js';
+    document.head.appendChild(s);
+  }
+}
+
+async function playTrack() {
+  const t = G.gameTracks[G.currentTrackIdx];
+  if (!t) return;
+  if (G.sdkReady && G.deviceId) {
+    try {
+      await spPut(`https://api.spotify.com/v1/me/player/play?device_id=${G.deviceId}`, { uris:[`spotify:track:${t.id}`] });
+      document.getElementById('sdk-ctrl').style.display = '';
+      document.getElementById('iframe-player').style.display = 'none';
+      G.isPlaying = true;
+      startTimer(); updateCtrlUI();
+      return;
+    } catch(e) {}
+  }
+  // iframe fallback
+  document.getElementById('sdk-ctrl').style.display = 'none';
+  document.getElementById('iframe-player').style.display = '';
+  document.getElementById('sp-iframe').src = `https://open.spotify.com/embed/track/${t.id}?utm_source=generator&theme=0&autoplay=1`;
+}
+
+function startTimer() {
+  clearInterval(G.progTimer);
+  G.progTimer = setInterval(async () => {
+    if (!G.player || !G.isPlaying) return;
+    const st = await G.player.getCurrentState();
+    if (!st) return;
+    G.trackPos = st.position/1000; G.trackDur = st.duration/1000; G.isPlaying = !st.paused;
+    updateProgBar();
+  }, 500);
+}
+
+async function togglePP() { if (G.player) await G.player.togglePlay(); }
+async function seekBack()  { const st=await G.player?.getCurrentState(); if(st) G.player.seek(Math.max(0,st.position-10000)); }
+async function seekFwd()   { const st=await G.player?.getCurrentState(); if(st) G.player.seek(st.position+10000); }
+
+function updateCtrlUI() {
+  const btn = document.getElementById('pp-btn');
+  if (btn) btn.textContent = G.isPlaying ? '⏸' : '▶';
+  updateProgBar();
+}
+function updateProgBar() {
+  const pct = G.trackDur > 0 ? (G.trackPos/G.trackDur)*100 : 0;
+  const f = document.getElementById('prog-fill'); if(f) f.style.width=pct+'%';
+  const cur = document.getElementById('t-cur'); if(cur) cur.textContent=fmt(G.trackPos);
+  const tot = document.getElementById('t-tot'); if(tot) tot.textContent=fmt(G.trackDur);
+}
+function fmt(s) { const m=Math.floor(s/60),sc=Math.floor(s%60); return m+':'+(sc<10?'0':'')+sc; }
+
+// ══════════════════════════════════════════
+// SPIN WHEEL
+// ══════════════════════════════════════════
+let spinning=false, wAngle=0;
+
+function initSpin() {
+  const g = G.selectedGenre;
+  document.getElementById('spin-num').textContent = G.turnNum;
+  document.getElementById('spin-rem').textContent = `${G.currentTrackIdx+1}/${G.gameTracks.length}`;
+  const banner = document.getElementById('spin-genre-banner');
+  if (g) {
+    banner.style.cssText = `background:${g.bg};border-color:${g.color};color:${g.color};display:flex;align-items:center;gap:8px;padding:8px 14px;border-radius:12px;border:2px solid;font-size:13px;font-weight:600`;
+    banner.textContent = g.emoji + ' ' + g.label;
+  }
+  const btn = document.getElementById('spin-btn');
+  if (g) { btn.style.background = `linear-gradient(130deg,${g.color},${g.color}aa)`; }
+  drawWheel(wAngle);
+  document.getElementById('result-pill').classList.remove('show');
+  document.getElementById('to-play-btn').style.display = 'none';
+  document.getElementById('spin-btn').disabled = false;
+}
+
+function drawWheel(rot) {
+  const cv = document.getElementById('wcanvas');
+  const ctx = cv.getContext('2d');
+  const W=cv.width, cx=W/2, r=W/2-3, sl=Math.PI*2/GUESSES.length;
+  ctx.clearRect(0,0,W,W);
+  GUESSES.forEach((g,i) => {
+    const s=rot+i*sl, e=s+sl;
+    ctx.beginPath(); ctx.moveTo(cx,cx); ctx.arc(cx,cx,r,s,e); ctx.closePath();
+    ctx.fillStyle=g.color; ctx.fill();
+    ctx.strokeStyle='#09090b'; ctx.lineWidth=3; ctx.stroke();
+    ctx.save(); ctx.translate(cx,cx); ctx.rotate(s+sl/2); ctx.textAlign='right';
+    ctx.font=`600 ${W*.036}px DM Sans,sans-serif`;
+    ctx.fillStyle='rgba(0,0,0,.45)'; ctx.fillText(g.emoji+' '+g.label, r-11, 5);
+    ctx.fillStyle='#fff'; ctx.fillText(g.emoji+' '+g.label, r-12, 4);
+    ctx.restore();
+  });
+  ctx.beginPath(); ctx.arc(cx,cx,r*.14,0,Math.PI*2);
+  ctx.fillStyle='#09090b'; ctx.fill(); ctx.strokeStyle='#1e1e2a'; ctx.lineWidth=3; ctx.stroke();
+}
+
+function doSpin() {
+  if (spinning) return;
+  spinning = true;
+  document.getElementById('spin-btn').disabled = true;
+  document.getElementById('result-pill').classList.remove('show');
+  document.getElementById('to-play-btn').style.display = 'none';
+  const extra = (5+Math.random()*6)*Math.PI*2;
+  const target = wAngle+extra, dur=2800+Math.random()*1200;
+  const t0=performance.now(), a0=wAngle;
+  const ease = t => 1-Math.pow(1-t,4);
+  function frame(now) {
+    const p = Math.min((now-t0)/dur,1);
+    wAngle = a0+(target-a0)*ease(p);
+    drawWheel(wAngle);
+    if (p<1) requestAnimationFrame(frame);
+    else { wAngle%=Math.PI*2; spinning=false; onSpinEnd(); }
+  }
+  requestAnimationFrame(frame);
+}
+
+function onSpinEnd() {
+  const sl=Math.PI*2/GUESSES.length;
+  let ptr=((-Math.PI/2)-wAngle)%(Math.PI*2);
+  if(ptr<0) ptr+=Math.PI*2;
+  const guess = GUESSES[Math.floor(ptr/sl)%GUESSES.length];
+  G.currentGuess = guess;
+  const pill = document.getElementById('result-pill');
+  pill.style.cssText = `width:min(74vw,270px);padding:12px 16px;border-radius:14px;border:2px solid ${guess.color};background:${guess.color}18;text-align:center;transition:opacity .3s`;
+  document.getElementById('rcat').innerHTML = `${guess.emoji} <span style="color:${guess.color}">${guess.label}</span>`;
+  document.getElementById('rhint').style.color = guess.color;
+  document.getElementById('rhint').textContent = guess.hint;
+  setTimeout(()=>pill.classList.add('show'),30);
+  const btn = document.getElementById('to-play-btn');
+  btn.style.display=''; btn.style.borderColor=guess.color; btn.style.color=guess.color;
+}
+
+// ══════════════════════════════════════════
+// PLAY SCREEN
+// ══════════════════════════════════════════
+function initPlay() {
+  const guess = G.currentGuess;
+  document.getElementById('play-num').textContent = `${G.currentTrackIdx+1}/${G.gameTracks.length}`;
+  if (guess) {
+    const pill = document.getElementById('play-guess-pill');
+    pill.style.cssText=`background:${guess.color}18;border-color:${guess.color};color:${guess.color};display:flex;align-items:center;gap:8px;padding:9px 15px;border-radius:11px;border:2px solid;font-size:13px;font-weight:600`;
+    pill.innerHTML=`${guess.emoji} <strong>${guess.label}</strong> — ${guess.hint}`;
+  }
+  playTrack();
+}
+
+function revealTrack() {
+  const t = G.gameTracks[G.currentTrackIdx];
+  if (!t) { showToast('Aucune chanson active'); return; }
+  const year = t.album?.release_date?.substring(0,4)||'?';
+  const artist = t.artists?.map(a=>a.name).join(', ')||'?';
+  const img = t.album?.images?.[0]?.url;
+  document.getElementById('rev-content').innerHTML=`
+    ${img?`<img class="rev-img" src="${img}">`:''}
+    <div class="rev-track">${esc(t.name)}</div>
+    <div class="rev-artist">${esc(artist)}</div>
+    <div class="rev-year" style="color:var(--g2)">📅 ${year}</div>`;
+  document.getElementById('rev-overlay').classList.add('show');
+}
+function closeReveal(){ document.getElementById('rev-overlay').classList.remove('show'); }
+
+// ══════════════════════════════════════════
+// PLAYER SELECT
+// ══════════════════════════════════════════
+function renderPS() {
+  const guess = G.currentGuess;
+  if (guess) {
+    ['ps-guess-pill'].forEach(id => {
+      const el=document.getElementById(id); if(!el) return;
+      el.style.cssText=`background:${guess.color}18;border-color:${guess.color};color:${guess.color};display:flex;align-items:center;gap:8px;padding:9px 14px;border-radius:11px;border:2px solid;font-size:13px;font-weight:600`;
+      el.innerHTML=`${guess.emoji} <strong>${guess.label}</strong> — ${guess.hint}`;
+    });
+  }
+  const grid=document.getElementById('ps-grid'); grid.innerHTML='';
+  G.players.forEach((p,i)=>{
+    const btn=document.createElement('div'); btn.className='ps-row';
+    const cats=GUESSES.map(g=>`<span style="color:${g.color}">${g.emoji}${p.marked.filter(m=>m===g.id).length}</span>`).join(' ');
+    btn.innerHTML=`<div class="ps-av" style="background:${p.color}20;color:${p.color};border:2px solid ${p.color}40">${p.name[0].toUpperCase()}</div>
+      <div class="ps-info"><div class="ps-name">${esc(p.name)}</div><div class="ps-sub">${p.score} pts · ${cats}</div></div>
+      <span style="color:var(--muted);font-size:17px">→</span>`;
+    btn.onclick=()=>{ G.currentPlayer=i; G.markMode=false; goTo('bingo-card'); };
+    grid.appendChild(btn);
+  });
+}
+
+function nextTurn() {
+  if(G.sdkReady&&G.player) G.player.pause().catch(()=>{});
+  clearInterval(G.progTimer);
+  G.currentTrackIdx++;
+  G.turnNum++;
+  G.currentGuess=null;
+  if(G.currentTrackIdx>=G.gameTracks.length){ showToast('🎵 Fin des chansons !'); G.currentTrackIdx=0; }
+  goTo('spin-screen');
+}
+
+// ══════════════════════════════════════════
+// BINGO CARD
+// ══════════════════════════════════════════
+function genCard() {
+  const pool=[];
+  GUESSES.forEach(g=>{ for(let i=0;i<5;i++) pool.push(g.id); });
+  return shuffle(pool);
+}
+
+function renderCard() {
+  const p=G.players[G.currentPlayer];
+  document.getElementById('bc-title').textContent=p.name;
+  const pts=document.getElementById('bc-pts');
+  pts.textContent=p.score+' pts';
+  const g=G.selectedGenre;
+  pts.style.cssText=`padding:3px 10px;border-radius:20px;font-weight:700;font-size:12px;background:${g?g.color:'var(--g2)'};color:${g&&g.color==='#ffd600'?'#000':'#fff'}`;
+
+  const leg=document.getElementById('bc-legend'); leg.innerHTML='';
+  GUESSES.forEach(g=>{
+    const n=p.marked.filter(m=>m===g.id).length;
+    const d=document.createElement('div'); d.className='bcleg';
+    d.innerHTML=`<div class="bcdot" style="background:${g.color}"></div>${g.emoji} ${n}/5`;
+    leg.appendChild(d);
+  });
+
+  const hint=document.getElementById('bc-hint');
+  const mb=document.getElementById('mark-btn');
+  if(G.currentGuess){
+    const cg=G.currentGuess;
+    if(G.markMode){
+      hint.style.color=cg.color; hint.textContent=`👆 Tape une case ${cg.emoji} à cocher`;
+      mb.style.cssText=`flex:1.5;background:${cg.color};color:#000;border:2px solid ${cg.color};border-radius:11px;padding:11px 14px;font-size:13px;font-weight:600;cursor:pointer`;
+      mb.textContent='✕ Annuler';
+    } else {
+      hint.style.color='var(--muted)'; hint.textContent=`Devinette : ${cg.emoji} ${cg.label}`;
+      mb.style.cssText=`flex:1.5;background:${cg.color}18;color:${cg.color};border:2px solid ${cg.color};border-radius:11px;padding:11px 14px;font-size:13px;font-weight:600;cursor:pointer`;
+      mb.textContent=`☑ Cocher ${cg.emoji}`;
+    }
+  } else {
+    hint.textContent='';
+    mb.style.cssText='flex:1.5;background:var(--surf);color:var(--muted);border:2px solid var(--border);border-radius:11px;padding:11px 14px;font-size:13px;font-weight:600;cursor:pointer';
+    mb.textContent='☑ Cocher';
+  }
+
+  const winCells=new Set(getWinCells(p));
+  const grid=document.getElementById('bgrid'); grid.innerHTML='';
+  p.card.forEach((gid,i)=>{
+    const cat=GUESSES.find(g=>g.id===gid);
+    const div=document.createElement('div'); div.className='bcell';
+    const mw=p.marked[i]; const mc=mw?GUESSES.find(g=>g.id===mw):null;
+    if(mw){
+      div.style.background=mc.color+'20'; div.style.borderColor=mc.color;
+      div.classList.add('marked');
+      if(winCells.has(i)) div.classList.add('bingo-line');
+      div.innerHTML=`<div class="ce">${mc.emoji}</div><div class="cl" style="color:${mc.color}">${mc.label.split('/')[0].trim()}</div>`;
+    } else {
+      div.style.borderColor=cat.color+'30';
+      div.innerHTML=`<div class="ce" style="opacity:.4">${cat.emoji}</div><div class="cl">${cat.label.split('/')[0].trim()}</div>`;
+      if(G.markMode&&G.currentGuess&&gid===G.currentGuess.id){
+        div.style.borderColor=G.currentGuess.color; div.style.background=G.currentGuess.color+'18';
+        div.classList.add('tap-me'); div.style.color=G.currentGuess.color;
+        div.innerHTML=`<div class="ce">${G.currentGuess.emoji}</div><div class="cl" style="color:${G.currentGuess.color}">${G.currentGuess.label.split('/')[0]}</div>`;
+        div.onclick=()=>markCell(i);
+      } else if(G.markMode) { div.style.opacity='.3'; }
+    }
+    grid.appendChild(div);
+  });
+}
+
+function toggleMark() {
+  if(!G.currentGuess){ showToast('Tourne la roue d\'abord !'); return; }
+  G.markMode=!G.markMode; renderCard();
+}
+
+function markCell(idx) {
+  if(!G.currentGuess) return;
+  const p=G.players[G.currentPlayer];
+  if(p.marked[idx]) return;
+  if(p.card[idx]!==G.currentGuess.id){ showToast('Mauvaise case !'); return; }
+  p.marked[idx]=G.currentGuess.id; p.score+=10; G.markMode=false;
+  const prevB=p.bingos; checkBingo(p); renderCard();
+  if(p.bingos>prevB){
+    const g=G.selectedGenre;
+    document.getElementById('win-who').innerHTML=`${p.name} <span style="color:${g?g.color:'#ffb300'}">${g?g.emoji:''}</span>`;
+    document.getElementById('win-sub').textContent=`+${(p.bingos-prevB)*200} pts bonus · Total : ${p.score} pts`;
+    goTo('win-screen');
+  }
+}
+
+function getWinCells(p){ const s=new Set(); getLines().forEach(l=>{ if(l.every(i=>p.marked[i])) l.forEach(i=>s.add(i)); }); return [...s]; }
+function getLines(){ const L=[]; for(let r=0;r<5;r++) L.push([r*5,r*5+1,r*5+2,r*5+3,r*5+4]); for(let c=0;c<5;c++) L.push([c,c+5,c+10,c+15,c+20]); L.push([0,6,12,18,24]); L.push([4,8,12,16,20]); return L; }
+function checkBingo(p){ let n=0; getLines().forEach(l=>{ if(l.every(i=>p.marked[i])) n++; }); if(n>p.bingos){ p.bingos=n; p.score+=200; } }
+
+// ══════════════════════════════════════════
+// LEADERBOARD
+// ══════════════════════════════════════════
+function renderLB(){
+  const el=document.getElementById('lb-list');
+  if(!G.players.length){ el.innerHTML='<p style="color:var(--muted);text-align:center;padding:28px 0">Aucune partie en cours.</p>'; return; }
+  const sorted=[...G.players].sort((a,b)=>b.score-a.score);
+  el.innerHTML='';
+  ['🥇','🥈','🥉'].concat([4,5,6,7,8]).forEach((m,i)=>{ if(!sorted[i]) return;
+    const p=sorted[i]; const r=document.createElement('div'); r.className='lb-row';
+    const cats=GUESSES.map(g=>`<span style="color:${g.color}">${g.emoji}${p.marked.filter(m=>m===g.id).length}</span>`).join(' ');
+    r.innerHTML=`<div class="lb-rank">${m}</div>
+      <div class="lb-av" style="background:${p.color}20;color:${p.color};border:2px solid ${p.color}40">${p.name[0].toUpperCase()}</div>
+      <div class="lb-info"><div class="lb-name">${esc(p.name)}</div><div class="lb-cats">${cats} · ${p.bingos} bingo${p.bingos!==1?'s':''}</div></div>
+      <div class="lb-score" style="color:${G.selectedGenre?.color||'var(--g2)'}">${p.score}<span style="font-size:9px;color:var(--muted)"> pts</span></div>`;
+    el.appendChild(r);
+  });
+}
+
+// ══════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]; } return a; }
+function esc(s){ const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+function newGame(){ G.players=[]; G.gameTracks=[]; goTo('home'); }
+
+let toastT;
+function showToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),2400); }
+
+// ══════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════
+window.addEventListener('load', () => {
+  const savedToken = sessionStorage.getItem('sp_token');
+  const tokenTime = parseInt(sessionStorage.getItem('sp_token_time') || '0');
+  const tokenAge = Date.now() - tokenTime; // ms
+  const TOKEN_MAX_AGE = 55 * 60 * 1000; // 55 minutes
+
+  if (window.location.search.includes('code=') || window.location.search.includes('error=')) {
+    handleCallback();
+  } else if (savedToken && tokenAge < TOKEN_MAX_AGE) {
+    G.token = savedToken;
+    initSDK();
+    goTo('genre-select');
+  } else if (savedToken) {
+    // Token too old, clear it
+    sessionStorage.removeItem('sp_token');
+    sessionStorage.removeItem('sp_token_time');
+    showToast('Session expiree, reconnecte-toi');
+  }
+});
+</script>
+</body>
+</html>
