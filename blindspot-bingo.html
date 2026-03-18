@@ -405,7 +405,7 @@ const GENRES = [
 
 const GUESSES = [
   { id:'g1', label:'Annee exacte',    emoji:'📅', color:'#ff4560', hint:'Donne l annee exacte' },
-  { id:'g2', label:'Decennie',        emoji:'🗓️', color:'#ffb300', hint:'Donne la decennie (ex: annees 90)' },
+  { id:'g2', label:'Decennie',        emoji:'🗓️', color:'#ffb300', hint:'Annees 60, 70, 80, 90, 2000, 2010...' },
   { id:'g3', label:'Artiste/Groupe',  emoji:'🎤', color:'#00e096', hint:'Nomme l artiste ou le groupe' },
   { id:'g4', label:'Titre',           emoji:'🎵', color:'#4da6ff', hint:'Donne le titre exact' },
   { id:'g5', label:'+/- 3 ans',       emoji:'⏱️', color:'#b96fff', hint:'L annee a +/- 3 ans pres' },
@@ -571,6 +571,27 @@ async function startGame() {
       } catch(e) { console.warn('Playlist load failed:', plId); }
     }
 
+    // Enrich ALL tracks with release year in parallel batches of 10
+    msg.textContent = 'Chargement des annees...';
+    const noYear = tracks.filter(t => !t.year);
+    for (let i = 0; i < noYear.length; i += 10) {
+      const batch = noYear.slice(i, i+10);
+      await Promise.all(batch.map(async t => {
+        try {
+          const detail = await deezerGet('track/' + t.id);
+          if (detail?.release_date) {
+            t.year = detail.release_date.substring(0,4);
+            t.album.release_date = detail.release_date;
+            if (!t.album.images?.[0]?.url && detail.album?.cover_medium) {
+              t.album.images = [{ url: detail.album.cover_medium }];
+            }
+          }
+        } catch(e) {}
+      }));
+    }
+    const withYear = tracks.filter(t => t.year).length;
+    msg.textContent = withYear + '/' + tracks.length + ' titres avec annee';
+
     if (tracks.length < 5) { ls.style.display='none'; showToast('Pas assez de titres (' + tracks.length + ')'); return; }
 
     G.gameTracks = shuffle([...tracks]).slice(0, Math.min(G.trackCount, tracks.length));
@@ -688,6 +709,19 @@ function initPlay() {
   document.getElementById('t-cur').textContent='0:00';
 }
 
+// Web Audio context for normalization
+let G_audioCtx = null;
+let G_gainNode = null;
+
+function getAudioCtx() {
+  if (!G_audioCtx) {
+    G_audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    G_gainNode = G_audioCtx.createGain();
+    G_gainNode.connect(G_audioCtx.destination);
+  }
+  return { ctx: G_audioCtx, gain: G_gainNode };
+}
+
 function startPlayback() {
   const track=G.gameTracks[G.currentTrackIdx];
   if (!track?.preview_url) { showToast('Pas de preview pour cette chanson'); return; }
@@ -696,8 +730,34 @@ function startPlayback() {
   document.getElementById('audio-ctrl').style.display='';
 
   if (G.audio) { G.audio.pause(); G.audio=null; }
-  G.audio=new Audio(track.preview_url);
-  G.audio.volume=0.8;
+  if (G_audioCtx) { G_audioCtx.close(); G_audioCtx=null; G_gainNode=null; }
+
+  G.audio = new Audio(track.preview_url);
+  G.audio.crossOrigin = 'anonymous';
+
+  try {
+    // Web Audio API for normalization
+    const { ctx, gain } = getAudioCtx();
+    const source = ctx.createMediaElementSource(G.audio);
+
+    // DynamicsCompressor smooths out volume differences between tracks
+    const compressor = ctx.createDynamicsCompressor();
+    compressor.threshold.value = -24;
+    compressor.knee.value = 30;
+    compressor.ratio.value = 12;
+    compressor.attack.value = 0.003;
+    compressor.release.value = 0.25;
+
+    source.connect(compressor);
+    compressor.connect(gain);
+    // Master volume controlled by slider
+    const volSlider = document.querySelector('input[type=range]');
+    gain.gain.value = volSlider ? volSlider.value / 100 : 0.8;
+  } catch(e) {
+    // Fallback to normal audio if Web Audio fails
+    G.audio.volume = 0.8;
+  }
+
   G.audio.play().catch(e => showToast('Erreur audio: '+e.message));
   G.isPlaying=true;
   document.getElementById('pp-btn').textContent='⏸';
@@ -734,7 +794,10 @@ function seekClick(e) {
   const pct=e.offsetX/bar.offsetWidth;
   G.audio.currentTime=(G.audio.duration||30)*pct;
 }
-function setVol(v) { if (G.audio) G.audio.volume=v/100; }
+function setVol(v) {
+  if (G_gainNode) G_gainNode.gain.value = v/100;
+  else if (G.audio) G.audio.volume = v/100;
+}
 function fmt(s){ const m=Math.floor(s/60),sc=Math.floor(s%60); return m+':'+(sc<10?'0':'')+sc; }
 
 function revealTrack() {
@@ -743,11 +806,12 @@ function revealTrack() {
   const artist=t.artists?.map(a=>a.name).join(', ')||'?';
   const img=t.album?.images?.[0]?.url;
   const year=t.year||t.album?.release_date?.substring(0,4)||'?';
+  const decade = year && year !== '?' ? Math.floor(parseInt(year)/10)*10 + 's' : '?';
   document.getElementById('rev-content').innerHTML=`
     ${img?`<img class="rev-img" src="${img}" onerror="this.style.display='none'">`:''}
     <div class="rev-track">${esc(t.name)}</div>
     <div class="rev-artist">${esc(artist)}</div>
-    <div class="rev-year" style="color:var(--g2)">📅 ${year}</div>`;
+    <div class="rev-year" style="color:var(--g2)">📅 ${year} — ${decade}</div>`;
   document.getElementById('rev-overlay').classList.add('show');
 }
 function closeReveal(){ document.getElementById('rev-overlay').classList.remove('show'); }
