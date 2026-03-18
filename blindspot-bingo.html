@@ -404,8 +404,8 @@ const GENRES = [
 ];
 
 const GUESSES = [
-  { id:'g1', label:'Annee exacte',    emoji:'📅', color:'#ff4560', hint:'Donne l annee exacte' },
-  { id:'g2', label:'Decennie',        emoji:'🗓️', color:'#ffb300', hint:'Annees 60, 70, 80, 90, 2000, 2010...' },
+  { id:'g1', label:'Nb de mots',      emoji:'🔢', color:'#ff4560', hint:'Combien de mots dans le titre ?' },
+  { id:'g2', label:'Nb de membres',   emoji:'👥', color:'#ffb300', hint:'Solo ou groupe ? Combien de membres ?' },
   { id:'g3', label:'Artiste/Groupe',  emoji:'🎤', color:'#00e096', hint:'Nomme l artiste ou le groupe' },
   { id:'g4', label:'Titre',           emoji:'🎵', color:'#4da6ff', hint:'Donne le titre exact' },
   { id:'g5', label:'+/- 3 ans',       emoji:'⏱️', color:'#b96fff', hint:'L annee a +/- 3 ans pres' },
@@ -806,12 +806,16 @@ function revealTrack() {
   const artist=t.artists?.map(a=>a.name).join(', ')||'?';
   const img=t.album?.images?.[0]?.url;
   const year=t.year||t.album?.release_date?.substring(0,4)||'?';
-  const decade = year && year !== '?' ? Math.floor(parseInt(year)/10)*10 + 's' : '?';
+  const wordCount = t.name.trim().split(/\s+/).length;
   document.getElementById('rev-content').innerHTML=`
     ${img?`<img class="rev-img" src="${img}" onerror="this.style.display='none'">`:''}
     <div class="rev-track">${esc(t.name)}</div>
     <div class="rev-artist">${esc(artist)}</div>
-    <div class="rev-year" style="color:var(--g2)">📅 ${year} — ${decade}</div>`;
+    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:4px">
+      <div style="color:var(--g2);font-size:12px;font-weight:600">📅 ${year}</div>
+      <div style="color:#ff4560;font-size:12px;font-weight:600">🔢 ${wordCount} mot${wordCount>1?'s':''}</div>
+    </div>
+    <div style="font-size:10px;color:var(--muted);margin-top:4px">⚠️ Annee selon Deezer (peut etre une reedition)</div>`;
   document.getElementById('rev-overlay').classList.add('show');
 }
 function closeReveal(){ document.getElementById('rev-overlay').classList.remove('show'); }
