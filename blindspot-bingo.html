@@ -392,15 +392,15 @@ canvas#wcanvas{border-radius:50%;box-shadow:0 0 0 3px #1e1e2a,0 0 40px rgba(0,0,
 // ═══════════════════════════════════════
 const GENRES = [
   { id:'qc',       label:'Quebecois',     emoji:'🎉', color:'#ff6b35', bg:'rgba(255,107,53,.15)', desc:'Pop, rock et chanson du Quebec',
-    genreId:153, plQuery:'quebecois chanson', chartId:153 },
+    plQueries:['chanson quebecoise','musique quebecoise','quebec pop','francophone quebec','hits quebec'] },
   { id:'rock',     label:'Rock',          emoji:'🎸', color:'#e84393', bg:'rgba(232,67,147,.15)', desc:'Classic rock, indie, alternatif',
-    genreId:152, plQuery:'rock classic', chartId:152 },
+    plQueries:['rock classic','rock essentials','rock hits','classic rock','rock legends'] },
   { id:'summer',   label:'Summer Hits',   emoji:'☀️', color:'#ffd600', bg:'rgba(255,214,0,.15)',  desc:'Les bangers de lete',
-    genreId:132, plQuery:'summer hits pop', chartId:132 },
+    plQueries:['summer hits','summer pop','beach party','summer vibes','hot summer'] },
   { id:'house',    label:'House / Electro',emoji:'🏠', color:'#00d4ff', bg:'rgba(0,212,255,.15)', desc:'Dance, house, electronique',
-    genreId:106, plQuery:'house electronic dance', chartId:106 },
+    plQueries:['house music','electronic dance','edm hits','dance floor','electro house'] },
   { id:'eighties', label:'Annees 80s',    emoji:'💃', color:'#a259ff', bg:'rgba(162,89,255,.15)', desc:'Les hits des annees 80',
-    genreId:0, plQuery:'80s hits annees 80', chartId:0 },
+    plQueries:['80s hits','annees 80','80s classics','best of 80s','80s pop rock'] },
 ];
 
 const GUESSES = [
@@ -502,25 +502,30 @@ function changeCount(d) { G.trackCount = Math.max(5,Math.min(50,G.trackCount+d))
 // ═══════════════════════════════════════
 // DEEZER API
 // ═══════════════════════════════════════
-// Try multiple CORS proxies in order
-const PROXIES = [
-  p => 'https://corsproxy.io/?' + encodeURIComponent('https://api.deezer.com' + p),
-  p => 'https://api.codetabs.com/v1/proxy?quest=https://api.deezer.com' + p,
-  p => 'https://thingproxy.freeboard.io/fetch/https://api.deezer.com' + p,
-];
+// Deezer via Vercel proxy
+const PROXY = 'https://blindspot-bingo-ra1ou5sq6-sw4plols-projects.vercel.app/api/deezer?path=';
 
 async function deezerGet(path) {
-  let lastErr;
-  for (const proxy of PROXIES) {
-    try {
-      const r = await fetch(proxy(path));
-      if (!r.ok) throw new Error('HTTP ' + r.status);
-      const data = await r.json();
-      if (data.error) throw new Error(data.error.message || 'Deezer error');
-      return data;
-    } catch(e) { lastErr = e; }
-  }
-  throw lastErr;
+  const r = await fetch(PROXY + encodeURIComponent(path));
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  const data = await r.json();
+  if (data.error) throw new Error(data.error.message || 'Deezer error');
+  return data;
+}
+
+function parseDeezerTrack(t) {
+  return {
+    id: t.id,
+    name: t.title,
+    artists: [{ name: t.artist?.name || '?' }],
+    preview_url: t.preview,
+    year: t.release_date ? t.release_date.substring(0,4) : null,
+    album: {
+      name: t.album?.title || '',
+      images: [{ url: t.album?.cover_medium || '' }],
+      release_date: t.release_date || ''
+    }
+  };
 }
 
 async function startGame() {
@@ -534,65 +539,36 @@ async function startGame() {
   try {
     const g = G.selectedGenre;
     let tracks = [];
-    let playlistIds = [];
 
-    // Step 1: Search for playlists matching the genre — gives huge variety
+    // Step 1: Search playlists on Deezer for this genre
     msg.textContent = 'Recherche de playlists...';
-    try {
-      const plData = await deezerGet('/search/playlist?q=' + encodeURIComponent(g.plQuery) + '&limit=25');
-      if (plData?.data) {
-        // Pick random playlists from results
-        const shuffledPls = shuffle([...plData.data]);
-        playlistIds = shuffledPls.slice(0, 6).map(p => p.id);
-      }
-    } catch(e) { console.warn('Playlist search failed', e); }
-
-    // Step 2: Also add genre chart
-    if (g.chartId > 0) {
+    let playlistIds = [];
+    for (const q of g.plQueries) {
+      if (playlistIds.length >= 15) break;
       try {
-        msg.textContent = 'Chargement du top genre...';
-        const chart = await deezerGet('/chart/' + g.chartId + '/tracks?limit=50');
-        if (chart?.data) {
-          chart.data.forEach(t => {
-            if (t?.id && t.preview && t.title && !tracks.find(x=>x.id===t.id)) {
-              tracks.push(parseDeezerTrack(t));
-            }
-          });
-        }
-      } catch(e) { console.warn('Chart failed', e); }
+        const data = await deezerGet('search/playlist?q=' + encodeURIComponent(q) + '&limit=10');
+        if (data?.data) data.data.forEach(p => { if (!playlistIds.includes(p.id)) playlistIds.push(p.id); });
+      } catch(e) { console.warn('Playlist search failed:', q); }
     }
 
-    // Step 3: Load tracks from found playlists
+    // Shuffle playlist IDs for variety each game
+    playlistIds = shuffle(playlistIds);
+
+    // Step 2: Load tracks from playlists with random offset
     for (const plId of playlistIds) {
       if (tracks.length >= 120) break;
       try {
-        // Random offset for variety
-        const offset = Math.floor(Math.random() * 3) * 25;
+        const offset = Math.floor(Math.random() * 4) * 25;
         msg.textContent = 'Chargement playlist... (' + tracks.length + ' titres)';
-        const plTracks = await deezerGet('/playlist/' + plId + '/tracks?limit=50&index=' + offset);
-        if (plTracks?.data) {
-          plTracks.data.forEach(t => {
+        const data = await deezerGet('playlist/' + plId + '/tracks?limit=50&index=' + offset);
+        if (data?.data) {
+          data.data.forEach(t => {
             if (t?.id && t.preview && t.title && !tracks.find(x=>x.id===t.id)) {
               tracks.push(parseDeezerTrack(t));
             }
           });
         }
-      } catch(e) { console.warn('Playlist load failed:', plId, e); }
-    }
-
-    // Fallback: global chart if not enough
-    if (tracks.length < 10) {
-      try {
-        msg.textContent = 'Recherche supplementaire...';
-        const search = await deezerGet('/search?q=' + encodeURIComponent(g.plQuery) + '&limit=50');
-        if (search?.data) {
-          search.data.forEach(t => {
-            if (t?.id && t.preview && t.title && !tracks.find(x=>x.id===t.id)) {
-              tracks.push(parseDeezerTrack(t));
-            }
-          });
-        }
-      } catch(e) {}
+      } catch(e) { console.warn('Playlist load failed:', plId); }
     }
 
     if (tracks.length < 5) { ls.style.display='none'; showToast('Pas assez de titres (' + tracks.length + ')'); return; }
@@ -923,21 +899,6 @@ function renderLB(){
 // ═══════════════════════════════════════
 // UTILS
 // ═══════════════════════════════════════
-function parseDeezerTrack(t) {
-  return {
-    id: t.id,
-    name: t.title,
-    artists: [{ name: t.artist?.name || '?' }],
-    preview_url: t.preview,
-    year: t.release_date ? t.release_date.substring(0,4) : null,
-    album: {
-      name: t.album?.title || '',
-      images: [{ url: t.album?.cover_medium || t.album?.cover || '' }],
-      release_date: t.release_date || ''
-    }
-  };
-}
-
 function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]; } return a; }
 function esc(s){ const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
 
