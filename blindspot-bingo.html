@@ -390,9 +390,6 @@ canvas#wcanvas{border-radius:50%;box-shadow:0 0 0 3px #1e1e2a,0 0 40px rgba(0,0,
 // ═══════════════════════════════════════
 // CONSTANTS
 // ═══════════════════════════════════════
-// Deezer CORS proxy — needed because Deezer blocks direct browser requests
-const DEEZER = 'https://api.allorigins.win/raw?url=' + encodeURIComponent('https://api.deezer.com');
-
 const GENRES = [
   { id:'qc',       label:'Quebecois',     emoji:'🎉', color:'#ff6b35', bg:'rgba(255,107,53,.15)', desc:'Pop, rock et chanson du Quebec',
     genreId:153, plQuery:'quebecois chanson', chartId:153 },
@@ -505,14 +502,25 @@ function changeCount(d) { G.trackCount = Math.max(5,Math.min(50,G.trackCount+d))
 // ═══════════════════════════════════════
 // DEEZER API
 // ═══════════════════════════════════════
+// Try multiple CORS proxies in order
+const PROXIES = [
+  p => 'https://corsproxy.io/?' + encodeURIComponent('https://api.deezer.com' + p),
+  p => 'https://api.codetabs.com/v1/proxy?quest=https://api.deezer.com' + p,
+  p => 'https://thingproxy.freeboard.io/fetch/https://api.deezer.com' + p,
+];
+
 async function deezerGet(path) {
-  const url = DEEZER + encodeURIComponent(path.startsWith('/') ? path : '/' + path);
-  // Use allorigins proxy to bypass CORS
-  const r = await fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent('https://api.deezer.com' + path));
-  if (!r.ok) throw new Error('HTTP ' + r.status);
-  const data = await r.json();
-  if (data.error) throw new Error(data.error.message || 'Deezer error');
-  return data;
+  let lastErr;
+  for (const proxy of PROXIES) {
+    try {
+      const r = await fetch(proxy(path));
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const data = await r.json();
+      if (data.error) throw new Error(data.error.message || 'Deezer error');
+      return data;
+    } catch(e) { lastErr = e; }
+  }
+  throw lastErr;
 }
 
 async function startGame() {
