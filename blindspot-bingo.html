@@ -395,15 +395,15 @@ const DEEZER = 'https://api.allorigins.win/raw?url=' + encodeURIComponent('https
 
 const GENRES = [
   { id:'qc',       label:'Quebecois',     emoji:'🎉', color:'#ff6b35', bg:'rgba(255,107,53,.15)', desc:'Pop, rock et chanson du Quebec',
-    deezerGenre:153, searches:['Cowboys Fringants','Coeur de pirate','Ariane Moffatt','Daniel Belanger','Les Trois Accords','Hubert Lenoir','Loud','Jean Leloup'] },
+    genreId:153, plQuery:'quebecois chanson', chartId:153 },
   { id:'rock',     label:'Rock',          emoji:'🎸', color:'#e84393', bg:'rgba(232,67,147,.15)', desc:'Classic rock, indie, alternatif',
-    deezerGenre:152, searches:['AC DC','Led Zeppelin','Rolling Stones','Nirvana','Pearl Jam','Foo Fighters','Queen','The Who'] },
+    genreId:152, plQuery:'rock classic', chartId:152 },
   { id:'summer',   label:'Summer Hits',   emoji:'☀️', color:'#ffd600', bg:'rgba(255,214,0,.15)',  desc:'Les bangers de lete',
-    deezerGenre:132, searches:['Dua Lipa','Katy Perry','Bruno Mars','Rihanna','Harry Styles','Doja Cat','Lizzo','The Weeknd'] },
+    genreId:132, plQuery:'summer hits pop', chartId:132 },
   { id:'house',    label:'House / Electro',emoji:'🏠', color:'#00d4ff', bg:'rgba(0,212,255,.15)', desc:'Dance, house, electronique',
-    deezerGenre:106, searches:['David Guetta','Calvin Harris','Avicii','Martin Garrix','Daft Punk','Tiesto','Swedish House Mafia','Deadmau5'] },
+    genreId:106, plQuery:'house electronic dance', chartId:106 },
   { id:'eighties', label:'Annees 80s',    emoji:'💃', color:'#a259ff', bg:'rgba(162,89,255,.15)', desc:'Les hits des annees 80',
-    deezerGenre:152, searches:['Michael Jackson','Madonna','Prince','David Bowie','Duran Duran','Depeche Mode','Cyndi Lauper','a-ha'] },
+    genreId:0, plQuery:'80s hits annees 80', chartId:0 },
 ];
 
 const GUESSES = [
@@ -526,44 +526,63 @@ async function startGame() {
   try {
     const g = G.selectedGenre;
     let tracks = [];
+    let playlistIds = [];
 
-    // Search by artist on Deezer — gives lots of variety
-    for (const artist of g.searches) {
-      if (tracks.length >= 80) break;
+    // Step 1: Search for playlists matching the genre — gives huge variety
+    msg.textContent = 'Recherche de playlists...';
+    try {
+      const plData = await deezerGet('/search/playlist?q=' + encodeURIComponent(g.plQuery) + '&limit=25');
+      if (plData?.data) {
+        // Pick random playlists from results
+        const shuffledPls = shuffle([...plData.data]);
+        playlistIds = shuffledPls.slice(0, 6).map(p => p.id);
+      }
+    } catch(e) { console.warn('Playlist search failed', e); }
+
+    // Step 2: Also add genre chart
+    if (g.chartId > 0) {
       try {
-        msg.textContent = 'Recherche: ' + artist + '... (' + tracks.length + ' titres)';
-        const data = await deezerGet('/search?q=artist:"' + encodeURIComponent(artist) + '"&limit=10&index=' + Math.floor(Math.random()*5)*10);
-        if (data?.data) {
-          data.data.forEach(t => {
-            // Only include tracks with preview
+        msg.textContent = 'Chargement du top genre...';
+        const chart = await deezerGet('/chart/' + g.chartId + '/tracks?limit=50');
+        if (chart?.data) {
+          chart.data.forEach(t => {
             if (t?.id && t.preview && t.title && !tracks.find(x=>x.id===t.id)) {
-              tracks.push({
-                id: t.id,
-                name: t.title,
-                artists: [{ name: t.artist?.name || '?' }],
-                preview_url: t.preview,
-                album: {
-                  name: t.album?.title || '',
-                  images: [{ url: t.album?.cover_medium || '' }],
-                  release_date: ''
-                },
-                year: null // Deezer doesn't always give year in search
-              });
+              tracks.push(parseDeezerTrack(t));
             }
           });
         }
-      } catch(e) { console.warn('Deezer search failed:', artist, e); }
+      } catch(e) { console.warn('Chart failed', e); }
     }
 
-    // Fetch years for first N tracks
-    msg.textContent = 'Finalisation... (' + tracks.length + ' titres)';
-    const toEnrich = tracks.slice(0, Math.min(40, tracks.length));
-    for (const t of toEnrich) {
+    // Step 3: Load tracks from found playlists
+    for (const plId of playlistIds) {
+      if (tracks.length >= 120) break;
       try {
-        const detail = await deezerGet('/track/' + t.id);
-        if (detail?.release_date) {
-          t.album.release_date = detail.release_date;
-          t.year = detail.release_date.substring(0,4);
+        // Random offset for variety
+        const offset = Math.floor(Math.random() * 3) * 25;
+        msg.textContent = 'Chargement playlist... (' + tracks.length + ' titres)';
+        const plTracks = await deezerGet('/playlist/' + plId + '/tracks?limit=50&index=' + offset);
+        if (plTracks?.data) {
+          plTracks.data.forEach(t => {
+            if (t?.id && t.preview && t.title && !tracks.find(x=>x.id===t.id)) {
+              tracks.push(parseDeezerTrack(t));
+            }
+          });
+        }
+      } catch(e) { console.warn('Playlist load failed:', plId, e); }
+    }
+
+    // Fallback: global chart if not enough
+    if (tracks.length < 10) {
+      try {
+        msg.textContent = 'Recherche supplementaire...';
+        const search = await deezerGet('/search?q=' + encodeURIComponent(g.plQuery) + '&limit=50');
+        if (search?.data) {
+          search.data.forEach(t => {
+            if (t?.id && t.preview && t.title && !tracks.find(x=>x.id===t.id)) {
+              tracks.push(parseDeezerTrack(t));
+            }
+          });
         }
       } catch(e) {}
     }
@@ -896,6 +915,21 @@ function renderLB(){
 // ═══════════════════════════════════════
 // UTILS
 // ═══════════════════════════════════════
+function parseDeezerTrack(t) {
+  return {
+    id: t.id,
+    name: t.title,
+    artists: [{ name: t.artist?.name || '?' }],
+    preview_url: t.preview,
+    year: t.release_date ? t.release_date.substring(0,4) : null,
+    album: {
+      name: t.album?.title || '',
+      images: [{ url: t.album?.cover_medium || t.album?.cover || '' }],
+      release_date: t.release_date || ''
+    }
+  };
+}
+
 function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]; } return a; }
 function esc(s){ const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
 
