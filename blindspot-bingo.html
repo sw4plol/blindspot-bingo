@@ -754,7 +754,8 @@ async function spPut(url, body) {
   await fetch(url, { method:'PUT', headers:{ Authorization:`Bearer ${G.token}`, 'Content-Type':'application/json' }, body:JSON.stringify(body) });
 }
 
-function logoutSpotify() { G.token = null; G.user = null; G.selectedGenre = null; sessionStorage.removeItem('sp_token'); goTo('home'); }
+function logoutSpotify() { G.token = null; G.user = null; G.selectedGenre = null; sessionStorage.removeItem('sp_token'); sessionStorage.removeItem('sp_token_time'); goTo('home'); }
+function fullReset() { sessionStorage.clear(); location.reload(); }
 
 // ══════════════════════════════════════════
 // PLAYERS SETUP
@@ -1306,11 +1307,12 @@ window.addEventListener('load', () => {
   } else if (savedToken && tokenAge < TOKEN_MAX_AGE) {
     G.token = savedToken;
     initSDK();
+    document.getElementById('logout-home-btn').style.display = '';
     goTo('genre-select');
   } else if (savedToken) {
-    // Token too old, clear it
     sessionStorage.removeItem('sp_token');
     sessionStorage.removeItem('sp_token_time');
+    document.getElementById('logout-home-btn').style.display = '';
     showToast('Session expiree, reconnecte-toi');
   }
 });
