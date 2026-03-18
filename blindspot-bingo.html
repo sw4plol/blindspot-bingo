@@ -343,16 +343,16 @@ canvas#wcanvas{border-radius:50%;box-shadow:0 0 0 3px #1e1e2a,0 0 40px rgba(0,0,
       <div id="setup-genre-badge" style="display:inline-flex;align-items:center;gap:8px;padding:9px 14px;border-radius:12px;border:2px solid;font-size:13px;font-weight:600;width:fit-content">—</div>
     </div>
     <div style="display:flex;flex-direction:column;gap:6px">
-      <div class="flabel">Playlist Spotify (optionnel)</div>
-      <div style="display:flex;gap:8px">
-        <input type="url" id="playlist-url-inp" placeholder="https://open.spotify.com/playlist/…"
-          style="flex:1;background:var(--surf);border:1.5px solid var(--border);border-radius:12px;
-          padding:12px 13px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;margin-top:0">
-        <button onclick="clearPlaylist()" style="background:var(--surf);border:1.5px solid var(--border);
-          border-radius:12px;color:var(--muted);font-size:18px;width:44px;height:44px;cursor:pointer;
-          display:flex;align-items:center;justify-content:center">✕</button>
+      <div class="flabel">Ta playlist (optionnel)</div>
+      <div id="my-playlists-wrap">
+        <div class="loading" id="pl-loading" style="display:none"><div class="spin"></div> Chargement...</div>
+        <select id="pl-select" style="width:100%;background:var(--surf);border:1.5px solid var(--border);
+          border-radius:12px;padding:12px 13px;color:var(--text);font-family:'DM Sans',sans-serif;
+          font-size:13px;outline:none;cursor:pointer;appearance:none;-webkit-appearance:none">
+          <option value="">-- Utiliser les artistes du genre --</option>
+        </select>
       </div>
-      <div id="pl-status" style="font-size:11px;color:var(--muted)">Laisse vide pour utiliser les artistes du genre</div>
+      <div id="pl-status" style="font-size:11px;color:var(--muted)">Laisse vide pour utiliser la recherche par artiste</div>
     </div>
     <div style="display:flex;flex-direction:column;gap:6px">
       <div class="flabel">Joueurs</div>
@@ -769,6 +769,29 @@ function initPlayersSetup() {
   }
   if (G.user) document.getElementById('sp-user').textContent = '✓ ' + G.user.display_name;
   renderPList();
+  loadMyPlaylists();
+}
+
+
+async function loadMyPlaylists() {
+  const sel = document.getElementById('pl-select');
+  const status = document.getElementById('pl-status');
+  sel.innerHTML = '<option value="">-- Utiliser les artistes du genre --</option>';
+  try {
+    const data = await spGet('https://api.spotify.com/v1/me/playlists?limit=50');
+    if (data?.items) {
+      data.items.forEach(pl => {
+        if (!pl?.id) return;
+        const opt = document.createElement('option');
+        opt.value = pl.id;
+        opt.textContent = pl.name + ' (' + (pl.tracks?.total || '?') + ' titres)';
+        sel.appendChild(opt);
+      });
+      status.textContent = data.items.length + ' playlists disponibles';
+    }
+  } catch(e) {
+    status.textContent = 'Erreur: ' + e.message;
+  }
 }
 
 function renderPList() {
@@ -823,8 +846,7 @@ async function startGame() {
     }
 
     // Check for custom playlist URL
-    const plUrl = document.getElementById('playlist-url-inp').value.trim();
-    const plId = plUrl ? extractPlaylistId(plUrl) : null;
+    const plId = document.getElementById('pl-select').value || null;
 
     if (plId) {
       // Load from custom playlist with random offset for variety
@@ -1263,10 +1285,7 @@ function extractPlaylistId(url) {
   const m = url.match(/playlist[\/:]([a-zA-Z0-9]+)/);
   return m ? m[1] : null;
 }
-function clearPlaylist() {
-  document.getElementById('playlist-url-inp').value = '';
-  document.getElementById('pl-status').textContent = 'Laisse vide pour utiliser les artistes du genre';
-}
+
 function esc(s){ const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
 function newGame(){ G.players=[]; G.gameTracks=[]; goTo('home'); }
 
