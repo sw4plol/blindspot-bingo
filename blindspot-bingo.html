@@ -977,11 +977,9 @@ function renderCard() {
       div.classList.add('marked');
       if (winCells.has(i)) div.classList.add('bingo-line');
       div.innerHTML=`<div class="ce">${mc.emoji}</div><div class="cl" style="color:${mc.color}">${mc.label.split('/')[0]}</div>`;
-      // Double-tap to unmark: same category
-      if (G.currentGuess && mw===G.currentGuess.id) {
-        div.style.cursor='pointer';
-        div.onclick=()=>markCell(i);
-      }
+      // Single click/tap to unmark
+      div.style.cursor='pointer';
+      div.onclick=()=>unmarkCell(i);
     } else if (isCurrentCat) {
       // Matching category — highlighted, 1 tap to mark
       div.style.borderColor=G.currentGuess.color;
@@ -1002,6 +1000,15 @@ function renderCard() {
 
 function toggleMark() {
   if (!G.currentGuess) { showToast("Tourne la roue d'abord !"); return; }
+  renderCard();
+}
+
+function unmarkCell(idx) {
+  const p=G.players[G.currentPlayer];
+  if (!p.marked[idx]) return;
+  p.marked[idx]=null;
+  p.score=Math.max(0,p.score-10);
+  showToast('Case décochée');
   renderCard();
 }
 
