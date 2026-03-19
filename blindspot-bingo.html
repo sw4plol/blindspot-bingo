@@ -384,11 +384,11 @@ canvas#wcanvas{border-radius:50%;box-shadow:0 0 0 3px #1e1e2a,0 0 40px rgba(0,0,
 // CONSTANTS
 // ═══════════════════════════════════════
 const GENRES = [
-  { id:'qc',       label:"Québécois",     emoji:'🎉', color:'#ff6b35', bg:'rgba(255,107,53,.15)', desc:"Pop, rock et chanson du Québec",
+  { id:'qc',       label:"Québécois",     emoji:'🎉', color:'#ff6b35', bg:'rgba(255,107,53,.15)', desc:"Pop, rock et chanson du Quebec",
     plQueries:['chanson quebecoise','musique quebecoise','quebec pop','francophone quebec','hits quebec'] },
   { id:'rock',     label:'Rock',          emoji:'🎸', color:'#e84393', bg:'rgba(232,67,147,.15)', desc:"Classic rock, indie, alternatif",
     plQueries:['rock classic','rock essentials','rock hits','classic rock','rock legends'] },
-  { id:'summer',   label:'Summer Hits',   emoji:'☀️', color:'#ffd600', bg:'rgba(255,214,0,.15)',  desc:"Les bangers de l'été",
+  { id:'summer',   label:'Summer Hits',   emoji:'☀️', color:'#ffd600', bg:'rgba(255,214,0,.15)',  desc:"Les bangers de l'ete",
     plQueries:['summer hits','summer pop','beach party','summer vibes','hot summer'] },
   { id:'house',    label:"House / Électro",emoji:'🏠', color:'#00d4ff', bg:'rgba(0,212,255,.15)', desc:"Dance, house, électronique",
     plQueries:['house music','electronic dance','edm hits','dance floor','electro house'] },
@@ -935,7 +935,7 @@ function renderCard() {
 }
 
 function toggleMark() {
-  if (!G.currentGuess) { showToast('Tourne la roue d'abord !'); return; }
+  if (!G.currentGuess) { showToast("Tourne la roue d'abord !"); return; }
   G.markMode=!G.markMode; renderCard();
 }
 
