@@ -201,7 +201,7 @@ canvas#wcanvas{border-radius:50%;box-shadow:0 0 0 3px #1e1e2a,0 0 40px rgba(0,0,
     <button class="btn btn-ghost" onclick="goTo('leaderboard')">🏆 Classement</button>
     <button class="btn btn-ghost btn-sm" onclick="fullReset()" style="max-width:320px;opacity:.5">⟳ Réinitialiser</button>
   </div>
-  <div style="position:absolute;bottom:14px;left:16px;font-size:10px;color:rgba(255,255,255,.25);letter-spacing:1px;font-family:'DM Sans',sans-serif">v0.1135</div>
+  <div style="position:absolute;bottom:14px;left:16px;font-size:10px;color:rgba(255,255,255,.25);letter-spacing:1px;font-family:'DM Sans',sans-serif">v0.5165</div>
 </div>
 
 <!-- GENRE SELECT -->
@@ -342,7 +342,7 @@ canvas#wcanvas{border-radius:50%;box-shadow:0 0 0 3px #1e1e2a,0 0 40px rgba(0,0,
     <div class="ps-grid" id="ps-grid"></div>
     <div style="display:flex;flex-direction:column;gap:8px;margin-top:auto;padding-top:8px">
       <button class="btn btn-fire" onclick="nextTurn()">⏭ Tour suivant</button>
-      <button class="btn btn-ghost btn-sm" onclick="stopAndGoTo('leaderboard')">📊 Classement</button>
+      <button class="btn btn-ghost btn-sm" onclick="goTo('leaderboard')">📊 Classement</button>
     </div>
   </div>
 </div>
@@ -350,7 +350,7 @@ canvas#wcanvas{border-radius:50%;box-shadow:0 0 0 3px #1e1e2a,0 0 40px rgba(0,0,
 <!-- BINGO CARD -->
 <div id="bingo-card" class="screen">
   <div class="topbar" style="padding-bottom:0">
-    <div class="back" onclick="stopAndGoTo('player-select')">←</div>
+    <div class="back" onclick="goTo('player-select')">←</div>
     <div class="ptitle" id="bc-title"></div>
     <div class="bc-pts" id="bc-pts">0 pts</div>
   </div>
@@ -362,7 +362,7 @@ canvas#wcanvas{border-radius:50%;box-shadow:0 0 0 3px #1e1e2a,0 0 40px rgba(0,0,
     <div class="bgrid" id="bgrid"></div>
 
     <div class="bc-actions">
-      <button class="btn btn-ghost btn-sm" style="flex:1" onclick="stopAndGoTo('player-select')">← Joueurs</button>
+      <button class="btn btn-ghost btn-sm" style="flex:1" onclick="goTo('player-select')">← Joueurs</button>
 
     </div>
   </div>
@@ -375,7 +375,7 @@ canvas#wcanvas{border-radius:50%;box-shadow:0 0 0 3px #1e1e2a,0 0 40px rgba(0,0,
     <div class="win-big">BINGO!</div>
     <div class="win-who" id="win-who"></div>
     <div class="win-sub" id="win-sub"></div>
-    <button class="btn btn-fire" onclick="stopAndGoTo('player-select')" style="max-width:290px">🎲 Continuer</button>
+    <button class="btn btn-fire" onclick="goTo('player-select')" style="max-width:290px">🎲 Continuer</button>
     <button class="btn btn-ghost" onclick="newGame()" style="max-width:290px">🔄 Nouvelle partie</button>
   </div>
 </div>
@@ -879,6 +879,10 @@ async function startGame() {
 let spinning=false, wAngle=0;
 
 function initSpin() {
+  // Stop audio when arriving on spin screen (new turn)
+  if (G.audio) { G.audio.pause(); G.audio=null; }
+  if (G_audioCtx && G_audioCtx.state === 'running') G_audioCtx.suspend();
+  clearInterval(G.progTimer); G.progTimer=null; G.isPlaying=false;
   const g = G.selectedGenre;
   document.getElementById('spin-num').textContent = G.turnNum;
 
