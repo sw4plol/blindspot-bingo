@@ -398,10 +398,10 @@ const GENRES = [
 
 const GUESSES = [
   { id:'g1', label:'Nb de mots',      emoji:'🔢', color:'#ff4560', hint:'Combien de mots dans le titre ?' },
-  { id:'g2', label:'Double Shot',      emoji:'🍺', color:'#ffb300', hint:'Reponds a 2 categories — ou achete la case pour 5 gorgees !' },
-  { id:'g3', label:'Artiste/Groupe',  emoji:'🎤', color:'#00e096', hint:'Nomme l artiste ou le groupe' },
+  { id:'g2', label:'Double Shot',      emoji:'🍺', color:'#ffb300', hint:'Réponds à 2 catégories — ou achète la case pour 5 gorgées !' },
+  { id:'g3', label:'Artiste/Groupe',  emoji:'🎤', color:'#00e096', hint:'Nomme l'artiste ou le groupe' },
   { id:'g4', label:'Titre',           emoji:'🎵', color:'#4da6ff', hint:'Donne le titre exact' },
-  { id:'g5', label:'+/- 3 ans',       emoji:'⏱️', color:'#b96fff', hint:'L annee a +/- 3 ans pres' },
+  { id:'g5', label:'+/- 3 ans',       emoji:'⏱️', color:'#b96fff', hint:'L'année à +/- 3 ans près' },
 ];
 
 const AV_COLORS = ['#ff4560','#ffb300','#00e096','#4da6ff','#b96fff','#ff8c00','#00c8ff','#ff69b4'];
@@ -567,7 +567,7 @@ async function startGame() {
     }
 
     // Enrich ALL tracks with release year in parallel batches of 10
-    msg.textContent = 'Chargement des annees...';
+    msg.textContent = 'Chargement des années...';
     const noYear = tracks.filter(t => !t.year);
     for (let i = 0; i < noYear.length; i += 10) {
       const batch = noYear.slice(i, i+10);
@@ -759,7 +759,7 @@ function startPlayback() {
     G.audio.volume = 0.8;
   }
 
-  G.audio.play().catch(e => showToast('Erreur audio: '+e.message));
+  G.audio.play().catch(e => showToast('Erreur audio : '+e.message));
   G.isPlaying=true;
   document.getElementById('pp-btn').textContent='⏸';
 
@@ -801,7 +801,7 @@ function setVol(v) {
 }
 function fmt(s){ const m=Math.floor(s/60),sc=Math.floor(s%60); return m+':'+(sc<10?'0':'')+sc; }
 
-async function revealTrack() {
+function revealTrack() {
    const t=G.gameTracks[G.currentTrackIdx];
    if (!t) { showToast("Aucune chanson active"); return; }
    const artist=t.artists?.map(a=>a.name).join(", ")||"?";
@@ -819,26 +819,10 @@ async function revealTrack() {
      `<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:6px">` +
        `<div style="color:var(--g2);font-size:12px;font-weight:600;background:var(--surf);padding:4px 10px;border-radius:20px">📅 ${year}</div>` +
        `<div style="color:#ff4560;font-size:12px;font-weight:600;background:var(--surf);padding:4px 10px;border-radius:20px">🔢 ${wordCount} mot${wordCount>1?"s":""}</div>` +
-       `<div id="member-badge" style="color:#ffb300;font-size:12px;font-weight:600;background:var(--surf);padding:4px 10px;border-radius:20px">👥 ...</div>` +
      `</div>` +
-     `<div style="font-size:10px;color:var(--muted);margin-top:4px">⚠️ Annee selon Deezer (peut etre une reedition)</div>`;
+     `<div style="font-size:10px;color:var(--muted);margin-top:4px">⚠️ Année selon Deezer (peut être une réédition)</div>`;
    document.getElementById("rev-overlay").classList.add("show");
-   // Fetch member count
-   try {
-     const search = await deezerGet("search/artist?q=" + encodeURIComponent(t.artists?.[0]?.name || "") + "&limit=1");
-     const az = search?.data?.[0];
-     const badge = document.getElementById("member-badge");
-     if (az && badge) {
-       const detail = await deezerGet("artist/" + az.id);
-       const nb = detail?.nb_member;
-       if (nb === 1) badge.textContent = "👤 Solo";
-       else if (nb > 1) badge.textContent = "👥 Groupe — " + nb + " membre" + (nb>1?"s":"");
-       else badge.textContent = "👥 Solo ou groupe ?";
-     }
-   } catch(e) {
-     const b = document.getElementById("member-badge");
-     if (b) b.textContent = "👥 ?";
-   }
+
 }
 function closeReveal(){ document.getElementById('rev-overlay').classList.remove('show'); }
 
@@ -915,7 +899,7 @@ function renderCard() {
       mb.style.cssText=`flex:1.5;background:${cg.color};color:#000;border:2px solid ${cg.color};border-radius:11px;padding:11px 14px;font-size:13px;font-weight:600;cursor:pointer`;
       mb.textContent='✕ Annuler';
     } else {
-      hint.style.color='var(--muted)'; hint.textContent=`Devinette: ${cg.emoji} ${cg.label}`;
+      hint.style.color='var(--muted)'; hint.textContent=`Devinette : ${cg.emoji} ${cg.label}`;
       mb.style.cssText=`flex:1.5;background:${cg.color}18;color:${cg.color};border:2px solid ${cg.color};border-radius:11px;padding:11px 14px;font-size:13px;font-weight:600;cursor:pointer`;
       mb.textContent=`☑ Cocher ${cg.emoji}`;
     }
@@ -951,7 +935,7 @@ function renderCard() {
 }
 
 function toggleMark() {
-  if (!G.currentGuess) { showToast('Tourne la roue d abord !'); return; }
+  if (!G.currentGuess) { showToast('Tourne la roue d'abord !'); return; }
   G.markMode=!G.markMode; renderCard();
 }
 
