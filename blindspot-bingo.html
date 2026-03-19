@@ -237,8 +237,8 @@ canvas#wcanvas{border-radius:50%;box-shadow:0 0 0 3px #1e1e2a,0 0 40px rgba(0,0,
 
     <div id="load-status" class="loading" style="display:none"><div class="spin-anim"></div><span id="load-msg">Chargement...</span></div>
     <div style="display:flex;flex-direction:column;gap:6px">
-      <div class="flabel">Max chansons par artiste</div>
-      <div class="num-row">
+      <div class="flabel" id="artist-limit-label">Max chansons par artiste</div>
+      <div class="num-row" id="artist-limit-row">
         <div class="num-btn" onclick="changeArtistLimit(-1)">−</div>
         <div style="flex:1;text-align:center"><span class="num-val" id="artist-limit-val">3</span><span style="font-size:12px;color:var(--muted)"> par artiste</span></div>
         <div class="num-btn" onclick="changeArtistLimit(1)">+</div>
@@ -395,7 +395,7 @@ canvas#wcanvas{border-radius:50%;box-shadow:0 0 0 3px #1e1e2a,0 0 40px rgba(0,0,
       onkeydown="if(event.key==='Enter')confirmCustomGenre()"
       style="background:var(--surf);border:1.5px solid var(--border);border-radius:12px;padding:13px 14px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:15px;outline:none;width:100%">
     <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:4px 0;user-select:none">
-      <input type="checkbox" id="custom-is-artist"
+      <input type="checkbox" id="custom-is-artist" onchange="updateArtistLimitUI()"
         style="width:20px;height:20px;accent-color:var(--g3);cursor:pointer;flex-shrink:0">
       <span style="font-size:14px;color:var(--text)">C'est un artiste <span style="color:var(--muted);font-size:12px">(chansons uniquement de cet artiste)</span></span>
     </label>
@@ -489,6 +489,23 @@ function showCustomModal() {
 
 function closeCustomModal() {
   document.getElementById('custom-modal').classList.remove('show');
+}
+
+function updateArtistLimitUI() {
+  // Called from modal checkbox - preview effect
+  const isArtist = document.getElementById('custom-is-artist')?.checked;
+  const row = document.getElementById('artist-limit-row');
+  const label = document.getElementById('artist-limit-label');
+  if (!row) return;
+  if (isArtist) {
+    row.style.opacity = '0.3';
+    row.style.pointerEvents = 'none';
+    if (label) { label.style.opacity = '0.3'; label.textContent = 'Max chansons par artiste (non applicable)'; }
+  } else {
+    row.style.opacity = '1';
+    row.style.pointerEvents = '';
+    if (label) { label.style.opacity = '1'; label.textContent = 'Max chansons par artiste'; }
+  }
 }
 
 function confirmCustomGenre() {
