@@ -201,7 +201,7 @@ canvas#wcanvas{border-radius:50%;box-shadow:0 0 0 3px #1e1e2a,0 0 40px rgba(0,0,
     <button class="btn btn-ghost" onclick="goTo('leaderboard')">🏆 Classement</button>
     <button class="btn btn-ghost btn-sm" onclick="fullReset()" style="max-width:320px;opacity:.5">⟳ Réinitialiser</button>
   </div>
-  <div style="position:absolute;bottom:14px;left:16px;font-size:10px;color:rgba(255,255,255,.25);letter-spacing:1px;font-family:'DM Sans',sans-serif">v0.1047</div>
+  <div style="position:absolute;bottom:14px;left:16px;font-size:10px;color:rgba(255,255,255,.25);letter-spacing:1px;font-family:'DM Sans',sans-serif">v0.3318</div>
 </div>
 
 <!-- GENRE SELECT -->
@@ -1156,7 +1156,9 @@ function skipTrack() {
     const year = t.year || '?';
     const expanded = t.name.replace(/\([^)]*\)/g,'').replace(/\[[^\]]*\]/g,'').replace(/([a-zA-Z])'([a-zA-Z])/g,'$1 $2').replace(/[,\.!\?"]/g,' ').trim();
     const wc = expanded.split(/\s+/).filter(w=>w.length>0).length;
-    G.history.push({ name: t.name, artist, year, wordCount: wc, img: t.album?.images?.[0]?.url, skipped: true });
+    if (!G.history.find(h=>h.name===t.name)) {
+      G.history.push({ name: t.name, artist, year, wordCount: wc, img: t.album?.images?.[0]?.url, skipped: true });
+    }
   }
   nextTurn();
 }
