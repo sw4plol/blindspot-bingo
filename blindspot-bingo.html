@@ -84,14 +84,14 @@ input::placeholder{color:var(--muted)}
 #spin-screen{background:var(--bg)}
 .spin-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:16px;background:radial-gradient(ellipse at 50% 0%,#140a04 0%,var(--bg) 55%)}
 .genre-banner{display:flex;align-items:center;gap:8px;padding:8px 14px;border-radius:12px;border:2px solid;font-size:13px;font-weight:600}
-.wheel-wrap{position:relative;width:min(74vw,270px);height:min(74vw,270px)}
+.wheel-wrap{position:relative;width:min(88vw,340px);height:min(88vw,340px)}
 .wptr{position:absolute;top:-14px;left:50%;transform:translateX(-50%);font-size:22px;z-index:4;filter:drop-shadow(0 2px 6px rgba(0,0,0,.8))}
-canvas#wcanvas{border-radius:50%;box-shadow:0 0 0 3px #1e1e2a,0 0 40px rgba(0,0,0,.9)}
+canvas#wcanvas{border-radius:50%;box-shadow:0 0 0 3px #1e1e2a,0 0 40px rgba(0,0,0,.9);width:100%;height:100%}
 .wcenter{position:absolute;inset:43%;border-radius:50%;background:var(--bg);border:3px solid #1e1e2a;z-index:3}
-.spin-btn{width:min(74vw,270px);padding:16px;border:none;border-radius:16px;font-family:'Unbounded',sans-serif;font-size:15px;font-weight:700;letter-spacing:.5px;color:#fff;cursor:pointer;transition:transform .12s;box-shadow:0 4px 20px rgba(255,69,96,.3)}
+.spin-btn{width:min(88vw,340px);padding:16px;border:none;border-radius:16px;font-family:'Unbounded',sans-serif;font-size:15px;font-weight:700;letter-spacing:.5px;color:#fff;cursor:pointer;transition:transform .12s;box-shadow:0 4px 20px rgba(255,69,96,.3)}
 .spin-btn:active{transform:scale(.96)}
 .spin-btn:disabled{opacity:.35;cursor:not-allowed;box-shadow:none}
-.result-pill{width:min(74vw,270px);padding:12px 16px;border-radius:14px;border:2px solid;text-align:center;opacity:0;transition:opacity .3s;pointer-events:none}
+.result-pill{width:min(88vw,340px);padding:12px 16px;border-radius:14px;border:2px solid;text-align:center;opacity:0;transition:opacity .3s;pointer-events:none}
 .result-pill.show{opacity:1;pointer-events:auto}
 .rcat{font-family:'Unbounded',sans-serif;font-size:15px;font-weight:700;letter-spacing:-.3px}
 .rhint{font-size:11px;margin-top:3px;opacity:.7}
@@ -144,7 +144,7 @@ canvas#wcanvas{border-radius:50%;box-shadow:0 0 0 3px #1e1e2a,0 0 40px rgba(0,0,
 .bcell:active{transform:scale(.9)}
 .bcell .ce{font-size:clamp(11px,3vw,15px);line-height:1}
 .bcell .cl{font-size:clamp(5px,1.1vw,7px);color:var(--muted);text-align:center;margin-top:1px;line-height:1.2}
-.bcell.marked::after{content:'✓';position:absolute;font-family:'Unbounded',sans-serif;font-size:clamp(15px,4.5vw,22px);color:rgba(0,0,0,.2);font-weight:900}
+.bcell.marked::after{content:'✓';position:absolute;font-family:'Unbounded',sans-serif;font-size:clamp(18px,5.5vw,28px);color:rgba(0,0,0,.35);font-weight:900}
 .bcell.bingo-line{animation:bpop .35s ease}
 @keyframes bpop{50%{transform:scale(1.12)}}
 .bcell.tap-me{box-shadow:0 0 0 3px currentColor}
@@ -234,14 +234,7 @@ canvas#wcanvas{border-radius:50%;box-shadow:0 0 0 3px #1e1e2a,0 0 40px rgba(0,0,
         <button class="add-btn" id="add-btn-el" onclick="addPlayer()">+</button>
       </div>
     </div>
-    <div style="display:flex;flex-direction:column;gap:6px">
-      <div class="flabel">Nombre de chansons</div>
-      <div class="num-row">
-        <div class="num-btn" onclick="changeCount(-5)">−</div>
-        <div style="flex:1;text-align:center"><span class="num-val" id="track-count">20</span><span style="font-size:12px;color:var(--muted)"> titres</span></div>
-        <div class="num-btn" onclick="changeCount(+5)">+</div>
-      </div>
-    </div>
+
     <div id="load-status" class="loading" style="display:none"><div class="spin-anim"></div><span id="load-msg">Chargement...</span></div>
     <button class="btn btn-fire" onclick="startGame()" style="margin-top:auto">▶ Demarrer</button>
   </div>
@@ -252,13 +245,13 @@ canvas#wcanvas{border-radius:50%;box-shadow:0 0 0 3px #1e1e2a,0 0 40px rgba(0,0,
   <div class="topbar">
     <div class="back" onclick="goTo('setup')">←</div>
     <div class="ptitle">Tour <span id="spin-num">1</span></div>
-    <div id="spin-rem" style="font-size:11px;color:var(--muted);margin-left:auto"></div>
+    
   </div>
   <div class="spin-wrap">
     <div class="genre-banner" id="spin-genre-banner">—</div>
     <div class="wheel-wrap">
       <div class="wptr">▼</div>
-      <canvas id="wcanvas" width="270" height="270"></canvas>
+      <canvas id="wcanvas" width="340" height="340"></canvas>
       <div class="wcenter"></div>
     </div>
     <button class="spin-btn" id="spin-btn" onclick="doSpin()">⚡ TOURNER</button>
@@ -266,7 +259,7 @@ canvas#wcanvas{border-radius:50%;box-shadow:0 0 0 3px #1e1e2a,0 0 40px rgba(0,0,
       <div class="rcat" id="rcat"></div>
       <div class="rhint" id="rhint"></div>
     </div>
-    <button class="btn btn-ghost" id="to-play-btn" style="max-width:270px;display:none" onclick="goTo('play-screen')">🎵 Lancer la chanson →</button>
+    <button class="btn btn-ghost" id="to-play-btn" style="max-width:340px;display:none" onclick="goToPlay()">🎵 Lancer la chanson →</button>
   </div>
 </div>
 
@@ -275,7 +268,7 @@ canvas#wcanvas{border-radius:50%;box-shadow:0 0 0 3px #1e1e2a,0 0 40px rgba(0,0,
   <div class="topbar">
     <div class="back" onclick="goTo('spin-screen')">←</div>
     <div class="ptitle">Ecoute !</div>
-    <div id="play-num" style="font-size:11px;color:var(--muted);margin-left:auto"></div>
+    
   </div>
   <div class="play-wrap">
     <div class="mystery-art">
@@ -418,6 +411,7 @@ let G = {
   trackCount: 20,
   gameTracks: [],
   currentTrackIdx: 0,
+  playedIds: new Set(),
   currentGuess: null,
   players: [],
   currentPlayer: null,
@@ -556,11 +550,12 @@ async function startGame() {
 
     // Step 2: Load tracks from playlists with random offset
     for (const plId of playlistIds) {
-      if (tracks.length >= 120) break;
+      if (tracks.length >= 300) break;
       try {
-        const offset = Math.floor(Math.random() * 4) * 25;
+        // Random offset across full playlist for maximum variety
+        const offset = Math.floor(Math.random() * 8) * 25;
         msg.textContent = 'Chargement playlist... (' + tracks.length + ' titres)';
-        const data = await deezerGet('playlist/' + plId + '/tracks?limit=50&index=' + offset);
+        const data = await deezerGet('playlist/' + plId + '/tracks?limit=100&index=' + offset);
         if (data?.data) {
           data.data.forEach(t => {
             if (t?.id && t.preview && t.title && !tracks.find(x=>x.id===t.id)) {
@@ -594,7 +589,8 @@ async function startGame() {
 
     if (tracks.length < 5) { ls.style.display='none'; showToast('Pas assez de titres (' + tracks.length + ')'); return; }
 
-    G.gameTracks = shuffle([...tracks]).slice(0, Math.min(G.trackCount, tracks.length));
+    G.gameTracks = shuffle([...tracks]); // Keep ALL tracks, always shuffled
+    G.playedIds = new Set(); // Track played songs to avoid repeats
     G.currentTrackIdx = 0; G.turnNum = 1; G.currentGuess = null;
     G.players.forEach(p => { p.card=genCard(); p.marked=new Array(25).fill(null); p.score=0; p.bingos=0; });
 
@@ -615,7 +611,7 @@ let spinning=false, wAngle=0;
 function initSpin() {
   const g = G.selectedGenre;
   document.getElementById('spin-num').textContent = G.turnNum;
-  document.getElementById('spin-rem').textContent = `${G.currentTrackIdx+1}/${G.gameTracks.length}`;
+  
   const banner = document.getElementById('spin-genre-banner');
   if (g) {
     banner.style.cssText = `background:${g.bg};border-color:${g.color};color:${g.color};display:flex;align-items:center;gap:8px;padding:8px 14px;border-radius:12px;border:2px solid;font-size:13px;font-weight:600`;
@@ -677,7 +673,7 @@ function onSpinEnd() {
   const guess=GUESSES[Math.floor(ptr/sl)%GUESSES.length];
   G.currentGuess=guess;
   const pill=document.getElementById('result-pill');
-  pill.style.cssText=`width:min(74vw,270px);padding:12px 16px;border-radius:14px;border:2px solid ${guess.color};background:${guess.color}18;text-align:center;transition:opacity .3s`;
+  pill.style.cssText=`width:min(88vw,340px);padding:12px 16px;border-radius:14px;border:2px solid ${guess.color};background:${guess.color}18;text-align:center;transition:opacity .3s`;
   document.getElementById('rcat').innerHTML=`${guess.emoji} <span style="color:${guess.color}">${guess.label}</span>`;
   document.getElementById('rhint').style.color=guess.color;
   document.getElementById('rhint').textContent=guess.hint;
@@ -691,7 +687,7 @@ function onSpinEnd() {
 // ═══════════════════════════════════════
 function initPlay() {
   const guess=G.currentGuess;
-  document.getElementById('play-num').textContent=`${G.currentTrackIdx+1}/${G.gameTracks.length}`;
+  
   if (guess) {
     const pill=document.getElementById('play-guess-pill');
     pill.style.cssText=`background:${guess.color}18;border-color:${guess.color};color:${guess.color};display:flex;align-items:center;gap:8px;padding:9px 15px;border-radius:11px;border:2px solid;font-size:13px;font-weight:600`;
@@ -720,6 +716,11 @@ function getAudioCtx() {
     G_gainNode.connect(G_audioCtx.destination);
   }
   return { ctx: G_audioCtx, gain: G_gainNode };
+}
+
+function goToPlay() {
+  goTo('play-screen');
+  setTimeout(() => startPlayback(), 300);
 }
 
 function startPlayback() {
@@ -806,16 +807,18 @@ function revealTrack() {
   const artist=t.artists?.map(a=>a.name).join(', ')||'?';
   const img=t.album?.images?.[0]?.url;
   const year=t.year||t.album?.release_date?.substring(0,4)||'?';
-  const wordCount = t.name.trim().split(/\s+/).length;
+  const cleanTitle = t.name.replace(/[\(\)\[\]\{\}\'\"\,\.\!\?\-\_]/g,'').trim();
+  const wordCount = cleanTitle.split(/\s+/).filter(w=>w.length>0).length;
   document.getElementById('rev-content').innerHTML=`
     ${img?`<img class="rev-img" src="${img}" onerror="this.style.display='none'">`:''}
     <div class="rev-track">${esc(t.name)}</div>
     <div class="rev-artist">${esc(artist)}</div>
     <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:4px">
       <div style="color:var(--g2);font-size:12px;font-weight:600">📅 ${year}</div>
-      <div style="color:#ff4560;font-size:12px;font-weight:600">🔢 ${wordCount} mot${wordCount>1?'s':''}</div>
+      <div style="color:#ff4560;font-size:12px;font-weight:600">🔢 ${wordCount} mot${wordCount>1?'s':''} dans le titre</div>
     </div>
-    <div style="font-size:10px;color:var(--muted);margin-top:4px">⚠️ Annee selon Deezer (peut etre une reedition)</div>`;
+    <div style="font-size:10px;color:var(--muted);margin-top:4px">⚠️ Annee selon Deezer (peut etre une reedition)</div>
+    <div style="font-size:11px;color:#ffb300;margin-top:2px" id="member-info"></div>`;
   document.getElementById('rev-overlay').classList.add('show');
 }
 function closeReveal(){ document.getElementById('rev-overlay').classList.remove('show'); }
@@ -845,10 +848,17 @@ function renderPS() {
 function nextTurn() {
   clearInterval(G.progTimer);
   if (G.audio) { G.audio.pause(); }
-  G.currentTrackIdx++;
   G.turnNum++;
   G.currentGuess=null;
-  if (G.currentTrackIdx>=G.gameTracks.length) { showToast('Fin des chansons !'); G.currentTrackIdx=0; }
+  // Mark current as played
+  if (G.gameTracks[G.currentTrackIdx]) G.playedIds.add(G.gameTracks[G.currentTrackIdx].id);
+  // If all played, reset
+  if (G.playedIds.size >= G.gameTracks.length) { G.playedIds.clear(); G.gameTracks = shuffle([...G.gameTracks]); }
+  // Find next unplayed track
+  let next = G.currentTrackIdx + 1;
+  while (next < G.gameTracks.length && G.playedIds.has(G.gameTracks[next].id)) next++;
+  if (next >= G.gameTracks.length) { G.gameTracks = shuffle([...G.gameTracks]); next = 0; }
+  G.currentTrackIdx = next;
   goTo('spin-screen');
 }
 
@@ -903,7 +913,7 @@ function renderCard() {
     const div=document.createElement('div'); div.className='bcell';
     const mw=p.marked[i]; const mc=mw?GUESSES.find(g=>g.id===mw):null;
     if (mw) {
-      div.style.background=mc.color+'20'; div.style.borderColor=mc.color;
+      div.style.background=mc.color+'55'; div.style.borderColor=mc.color; div.style.boxShadow='0 0 0 1px '+mc.color+' inset';
       div.classList.add('marked');
       if (winCells.has(i)) div.classList.add('bingo-line');
       div.innerHTML=`<div class="ce">${mc.emoji}</div><div class="cl" style="color:${mc.color}">${mc.label.split('/')[0]}</div>`;
