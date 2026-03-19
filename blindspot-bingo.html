@@ -201,7 +201,7 @@ canvas#wcanvas{border-radius:50%;box-shadow:0 0 0 3px #1e1e2a,0 0 40px rgba(0,0,
     <button class="btn btn-ghost" onclick="goTo('leaderboard')">🏆 Classement</button>
     <button class="btn btn-ghost btn-sm" onclick="fullReset()" style="max-width:320px;opacity:.5">⟳ Réinitialiser</button>
   </div>
-  <div style="position:absolute;bottom:14px;left:16px;font-size:10px;color:rgba(255,255,255,.25);letter-spacing:1px;font-family:'DM Sans',sans-serif">v0.2859</div>
+  <div style="position:absolute;bottom:14px;left:16px;font-size:10px;color:rgba(255,255,255,.25);letter-spacing:1px;font-family:'DM Sans',sans-serif">v0.7652</div>
 </div>
 
 <!-- GENRE SELECT -->
@@ -413,7 +413,7 @@ canvas#wcanvas{border-radius:50%;box-shadow:0 0 0 3px #1e1e2a,0 0 40px rgba(0,0,
     <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:4px 0;user-select:none">
       <input type="checkbox" id="custom-is-artist" onchange="updateArtistLimitUI()"
         style="width:20px;height:20px;accent-color:var(--g3);cursor:pointer;flex-shrink:0">
-      <span style="font-size:14px;color:var(--text)">C'est un artiste <span style="color:var(--muted);font-size:12px">(chansons uniquement de cet artiste)</span></span>
+      <span style="font-size:14px;color:var(--text)">Artiste(s) <span style="color:var(--muted);font-size:12px">(sépare plusieurs artistes par une virgule)</span></span>
     </label>
     <div style="display:flex;gap:8px">
       <button class="btn btn-ghost btn-sm" style="flex:1" onclick="closeCustomModal()">Annuler</button>
@@ -533,12 +533,17 @@ function confirmCustomGenre() {
   const n = document.getElementById('custom-input').value.trim();
   if (!n) return;
   const isArtist = document.getElementById('custom-is-artist').checked;
+  // Parse multiple artists separated by comma
+  const artistList = isArtist ? n.split(',').map(a=>a.trim()).filter(a=>a.length>0) : [];
+  const label = isArtist && artistList.length > 1 ? artistList.slice(0,2).join(', ') + (artistList.length>2?' +'+( artistList.length-2):'') : n;
   G.selectedGenre = {
-    id: 'custom', label: n,
+    id: 'custom', label: label,
     emoji: isArtist ? '🎤' : '🎵',
     color: '#ffffff', bg: 'rgba(255,255,255,.1)',
     desc: isArtist ? 'Chansons de ' + n : n,
-    isArtist: isArtist, artistName: isArtist ? n : null,
+    isArtist: isArtist,
+    artistName: isArtist ? n : null,
+    artistList: artistList,
     plQueries: isArtist ? [] : [n, n + ' hits', n + ' playlist', n + ' music', 'best of ' + n]
   };
   document.getElementById('custom-input').value = '';
@@ -751,28 +756,39 @@ async function startGame() {
     const g = G.selectedGenre;
     let tracks = [];
 
-    if (g.isArtist && g.artistName) {
-      // ARTIST MODE - only songs from this artist
-      msg.textContent = 'Recherche de ' + g.artistName + '...';
-      try {
-        const artistData = await deezerGet('search/artist?q=' + encodeURIComponent(g.artistName) + '&limit=1');
-        if (artistData?.data?.[0]) {
-          const artistId = artistData.data[0].id;
-          msg.textContent = 'Chargement des chansons...';
-          const topData = await deezerGet('artist/' + artistId + '/top?limit=50');
-          if (topData?.data) topData.data.forEach(t => { if (t?.id && t.preview && t.title && !isLiveTrack(t.title)) tracks.push(parseDeezerTrack(t)); });
-          const albumData = await deezerGet('artist/' + artistId + '/albums?limit=15');
-          if (albumData?.data) {
-            for (const album of shuffle([...albumData.data]).slice(0,8)) {
-              if (tracks.length >= 150) break;
-              try {
-                const td = await deezerGet('album/' + album.id + '/tracks');
-                if (td?.data) td.data.forEach(t => { if (t?.id && t.preview && t.title && !isLiveTrack(t.title) && !tracks.find(x=>x.id===t.id)) tracks.push(parseDeezerTrack(t)); });
-              } catch(e) {}
+    if (g.isArtist && g.artistList && g.artistList.length > 0) {
+      // ARTIST MODE - songs from one or multiple artists
+      const artists = g.artistList;
+      for (const artistName of artists) {
+        msg.textContent = 'Recherche de ' + artistName + '...';
+        try {
+          const artistData = await deezerGet('search/artist?q=' + encodeURIComponent(artistName) + '&limit=1');
+          if (artistData?.data?.[0]) {
+            const artistId = artistData.data[0].id;
+            msg.textContent = 'Chargement: ' + artistName + '...';
+            // Top tracks
+            const topData = await deezerGet('artist/' + artistId + '/top?limit=50');
+            if (topData?.data) topData.data.forEach(t => {
+              if (t?.id && t.preview && t.title && !isLiveTrack(t.title) && !tracks.find(x=>x.id===t.id))
+                tracks.push(parseDeezerTrack(t));
+            });
+            // Albums for more variety
+            const albumData = await deezerGet('artist/' + artistId + '/albums?limit=15');
+            if (albumData?.data) {
+              for (const album of shuffle([...albumData.data]).slice(0,6)) {
+                if (tracks.length >= 200) break;
+                try {
+                  const td = await deezerGet('album/' + album.id + '/tracks');
+                  if (td?.data) td.data.forEach(t => {
+                    if (t?.id && t.preview && t.title && !isLiveTrack(t.title) && !tracks.find(x=>x.id===t.id))
+                      tracks.push(parseDeezerTrack(t));
+                  });
+                } catch(e) {}
+              }
             }
           }
-        }
-      } catch(e) { console.warn('Artist search failed:', e); }
+        } catch(e) { console.warn('Artist search failed:', artistName, e); }
+      }
     } else {
       // GENRE/PLAYLIST MODE
       msg.textContent = 'Recherche de playlists...';
