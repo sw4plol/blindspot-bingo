@@ -387,6 +387,25 @@ canvas#wcanvas{border-radius:50%;box-shadow:0 0 0 3px #1e1e2a,0 0 40px rgba(0,0,
 
 <div class="toast" id="toast"></div>
 
+<!-- Custom Genre Modal -->
+<div class="overlay" id="custom-modal" onclick="closeCustomModal()">
+  <div class="modal" onclick="event.stopPropagation()" style="gap:16px">
+    <div class="modal-title">✏️ Ton genre</div>
+    <input type="text" id="custom-input" placeholder="ex: Drake, Jazz, Années 90, K-pop..."
+      onkeydown="if(event.key==='Enter')confirmCustomGenre()"
+      style="background:var(--surf);border:1.5px solid var(--border);border-radius:12px;padding:13px 14px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:15px;outline:none;width:100%">
+    <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:4px 0;user-select:none">
+      <input type="checkbox" id="custom-is-artist"
+        style="width:20px;height:20px;accent-color:var(--g3);cursor:pointer;flex-shrink:0">
+      <span style="font-size:14px;color:var(--text)">C'est un artiste <span style="color:var(--muted);font-size:12px">(chansons uniquement de cet artiste)</span></span>
+    </label>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-ghost btn-sm" style="flex:1" onclick="closeCustomModal()">Annuler</button>
+      <button class="btn btn-fire btn-sm" style="flex:1.5" onclick="confirmCustomGenre()">Confirmer →</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ═══════════════════════════════════════
 // CONSTANTS
@@ -455,28 +474,38 @@ let G = {
     <div class="genre-card-icon" style="background:rgba(255,255,255,.08);color:#fff">✏️</div>
     <div style="flex:1">
       <div class="genre-card-name" style="color:#fff">Ton propre genre</div>
-      <div class="genre-card-desc">Écris n'importe quoi — jazz, K-pop, reggaeton...</div>
+      <div class="genre-card-desc">Artiste, style, époque...</div>
     </div>
     <div style="color:var(--muted);font-size:18px">→</div>
   </div>`;
-  custom.onclick = () => showCustomGenre();
+  custom.onclick = () => showCustomModal();
   grid.appendChild(custom);
 })();
 
-function showCustomGenre() {
-  const name = prompt("Artiste ou genre ?\n(ex: Drake, Jazz, Annees 90, K-pop...)");
-  if (!name || !name.trim()) return;
-  const n = name.trim();
-  const genreKw = ['hits','music','pop','rock','rap','jazz','electro','annees','dance','party','vibes','classic','radio','top','best','playlist','hip','hop','trap','francais','funk','soul','blues','metal','country'];
-  const words = n.toLowerCase().split(/\s+/);
-  const isArtist = words.length <= 3 && !words.some(w => genreKw.includes(w));
+function showCustomModal() {
+  document.getElementById('custom-modal').classList.add('show');
+  setTimeout(() => document.getElementById('custom-input').focus(), 100);
+}
+
+function closeCustomModal() {
+  document.getElementById('custom-modal').classList.remove('show');
+}
+
+function confirmCustomGenre() {
+  const n = document.getElementById('custom-input').value.trim();
+  if (!n) return;
+  const isArtist = document.getElementById('custom-is-artist').checked;
   G.selectedGenre = {
-    id: 'custom', label: n, emoji: isArtist ? '🎤' : '🎵',
+    id: 'custom', label: n,
+    emoji: isArtist ? '🎤' : '🎵',
     color: '#ffffff', bg: 'rgba(255,255,255,.1)',
     desc: isArtist ? 'Chansons de ' + n : n,
     isArtist: isArtist, artistName: isArtist ? n : null,
     plQueries: isArtist ? [] : [n, n + ' hits', n + ' playlist', n + ' music', 'best of ' + n]
   };
+  document.getElementById('custom-input').value = '';
+  document.getElementById('custom-is-artist').checked = false;
+  closeCustomModal();
   goTo('setup');
 }
 
