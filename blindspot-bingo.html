@@ -10,7 +10,7 @@
   --bg:#09090b; --surf:#121216; --card:#18181f; --border:#27272f;
   --text:#f4f4f8; --muted:#5c5c72;
   --g1:#ff4560; --g2:#ffb300; --g3:#00e096; --g4:#4da6ff; --g5:#b96fff;
-  --qc:#ff6b35; --rock:#e84393; --summer:#ffd600; --house:#00d4ff; --eighties:#a259ff;
+  --qc:#ff6b35; --rock:#e84393; --summer:#ffd600; --house:#00d4ff; --rap:#00d4ff;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;overflow:hidden}
@@ -37,7 +37,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
   gap:20px;padding:24px 20px;text-align:center;
   background:radial-gradient(ellipse at 50% -10%,#1c0a12 0%,var(--bg) 58%)}
 .logo-ring{width:88px;height:88px;border-radius:50%;margin:0 auto;
-  background:conic-gradient(var(--qc) 0 72deg,var(--rock) 72deg 144deg,var(--summer) 144deg 216deg,var(--house) 216deg 288deg,var(--eighties) 288deg 360deg);
+  background:conic-gradient(var(--rock) 0 90deg,var(--summer) 90deg 180deg,var(--qc) 180deg 270deg,var(--house) 270deg 360deg);
   display:flex;align-items:center;justify-content:center;position:relative}
 .logo-inner{width:56px;height:56px;border-radius:50%;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:26px}
 .gtitle{font-family:'Unbounded',sans-serif;font-size:clamp(38px,11vw,62px);font-weight:900;letter-spacing:-3px;line-height:.9}
@@ -384,16 +384,14 @@ canvas#wcanvas{border-radius:50%;box-shadow:0 0 0 3px #1e1e2a,0 0 40px rgba(0,0,
 // CONSTANTS
 // ═══════════════════════════════════════
 const GENRES = [
-  { id:'qc',       label:"Québécois",     emoji:'🎉', color:'#ff6b35', bg:'rgba(255,107,53,.15)', desc:"Pop, rock et chanson du Quebec",
-    plQueries:['chanson quebecoise','musique quebecoise','quebec pop','francophone quebec','hits quebec'] },
-  { id:'rock',     label:'Rock',          emoji:'🎸', color:'#e84393', bg:'rgba(232,67,147,.15)', desc:"Classic rock, indie, alternatif",
+  { id:'rock',   label:'Rock',        emoji:'🎸', color:'#e84393', bg:'rgba(232,67,147,.15)', desc:"Classic rock, indie, alternatif",
     plQueries:['rock classic','rock essentials','rock hits','classic rock','rock legends'] },
-  { id:'summer',   label:'Summer Hits',   emoji:'☀️', color:'#ffd600', bg:'rgba(255,214,0,.15)',  desc:"Les bangers de l'ete",
-    plQueries:['summer hits','summer pop','beach party','summer vibes','hot summer'] },
-  { id:'house',    label:"House / Électro",emoji:'🏠', color:'#00d4ff', bg:'rgba(0,212,255,.15)', desc:"Dance, house, électronique",
-    plQueries:['house music','electronic dance','edm hits','dance floor','electro house'] },
-  { id:'eighties', label:"Années 80s",    emoji:'💃', color:'#a259ff', bg:'rgba(162,89,255,.15)', desc:"Les hits des années 80",
-    plQueries:['80s hits','annees 80','80s classics','best of 80s','80s pop rock'] },
+  { id:'summer', label:'Summer Pop',  emoji:'☀️', color:'#ffd600', bg:'rgba(255,214,0,.15)',  desc:"Pop estivale et bangers",
+    plQueries:['summer pop','pop summer hits','beach pop','summer vibes pop','pop hits summer'] },
+  { id:'qc',     label:'Quebec Hits', emoji:'🎉', color:'#ff6b35', bg:'rgba(255,107,53,.15)', desc:"Les meilleurs hits du Québec",
+    plQueries:['quebec hits','chanson quebecoise','hits quebecois','pop rock quebec','francophone hits'] },
+  { id:'rap',    label:'Rap Music',   emoji:'🎤', color:'#00d4ff', bg:'rgba(0,212,255,.15)', desc:"Hip-hop, rap, trap",
+    plQueries:['rap hits','hip hop hits','rap music','trap hits','rap francais'] },
 ];
 
 const GUESSES = [
@@ -440,7 +438,38 @@ let G = {
     el.onclick = () => { G.selectedGenre = g; goTo('setup'); };
     grid.appendChild(el);
   });
+
+  // Custom genre card
+  const custom = document.createElement('div');
+  custom.className = 'genre-card';
+  custom.style.cssText = 'border-color:#ffffff20;background:rgba(255,255,255,.05);border-style:dashed';
+  custom.innerHTML = `<div class="genre-card-inner">
+    <div class="genre-card-icon" style="background:rgba(255,255,255,.08);color:#fff">✏️</div>
+    <div style="flex:1">
+      <div class="genre-card-name" style="color:#fff">Ton propre genre</div>
+      <div class="genre-card-desc">Écris n'importe quoi — jazz, K-pop, reggaeton...</div>
+    </div>
+    <div style="color:var(--muted);font-size:18px">→</div>
+  </div>`;
+  custom.onclick = () => showCustomGenre();
+  grid.appendChild(custom);
 })();
+
+function showCustomGenre() {
+  const name = prompt("Quel genre de musique ?");
+  if (!name || !name.trim()) return;
+  const n = name.trim();
+  G.selectedGenre = {
+    id: 'custom',
+    label: n,
+    emoji: '🎵',
+    color: '#ffffff',
+    bg: 'rgba(255,255,255,.1)',
+    desc: n,
+    plQueries: [n, n + ' hits', n + ' playlist', n + ' music', 'best of ' + n]
+  };
+  goTo('setup');
+}
 
 // ═══════════════════════════════════════
 // NAVIGATION
