@@ -671,8 +671,7 @@ function initSpin() {
   document.getElementById('result-pill').classList.remove('show');
   document.getElementById('to-play-btn').style.display = 'none';
   document.getElementById('spin-btn').disabled = false;
-  // Stop audio
-  if (G.audio) { G.audio.pause(); }
+  // Don't stop audio here — player may return to play screen
 }
 
 function drawWheel(rot) {
@@ -742,16 +741,27 @@ function initPlay() {
     pill.style.cssText=`background:${guess.color}18;border-color:${guess.color};color:${guess.color};display:flex;align-items:center;gap:8px;padding:9px 15px;border-radius:11px;border:2px solid;font-size:13px;font-weight:600`;
     pill.innerHTML=`${guess.emoji} <strong>${guess.label}</strong> — ${guess.hint}`;
   }
-  // Show play button, hide controls
-  document.getElementById('audio-ctrl').style.display='none';
-  document.getElementById('play-start-btn').style.display='';
-  document.getElementById('pp-btn').textContent='▶';
-  G.isPlaying=false;
-  clearInterval(G.progTimer);
-  if (G.audio) { G.audio.pause(); G.audio=null; }
-  // Reset progress
-  document.getElementById('prog-fill').style.width='0%';
-  document.getElementById('t-cur').textContent='0:00';
+  if (G.audio && G.isPlaying) {
+    // Returning from player-select — keep playing, just update UI
+    document.getElementById('audio-ctrl').style.display='';
+    document.getElementById('play-start-btn').style.display='none';
+    document.getElementById('pp-btn').textContent='⏸';
+    G.progTimer = G.progTimer || setInterval(updateProgress, 200);
+  } else if (!G.audio) {
+    // New track — show play button
+    document.getElementById('audio-ctrl').style.display='none';
+    document.getElementById('play-start-btn').style.display='';
+    document.getElementById('pp-btn').textContent='▶';
+    G.isPlaying=false;
+    clearInterval(G.progTimer);
+    document.getElementById('prog-fill').style.width='0%';
+    document.getElementById('t-cur').textContent='0:00';
+  } else {
+    // Audio exists but paused — show controls
+    document.getElementById('audio-ctrl').style.display='';
+    document.getElementById('play-start-btn').style.display='none';
+    document.getElementById('pp-btn').textContent='▶';
+  }
 }
 
 // Web Audio context for normalization
@@ -902,7 +912,8 @@ function renderPS() {
 
 function nextTurn() {
   clearInterval(G.progTimer);
-  if (G.audio) { G.audio.pause(); }
+  G.progTimer = null;
+  if (G.audio) { G.audio.pause(); G.audio=null; }
   G.turnNum++;
   G.currentGuess=null;
   // Mark current as played
