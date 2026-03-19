@@ -244,6 +244,17 @@ canvas#wcanvas{border-radius:50%;box-shadow:0 0 0 3px #1e1e2a,0 0 40px rgba(0,0,
         <div class="num-btn" onclick="changeArtistLimit(1)">+</div>
       </div>
     </div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none">
+        <input type="checkbox" id="custom-wheel-toggle" onchange="toggleCustomWheel()"
+          style="width:18px;height:18px;accent-color:var(--g3);cursor:pointer;flex-shrink:0">
+        <span style="font-size:13px;color:var(--text)">Roue personnalisée</span>
+      </label>
+      <div id="custom-wheel-inputs" style="display:none;flex-direction:column;gap:6px">
+        <div class="flabel">Tes 5 catégories</div>
+        <div id="custom-wheel-fields" style="display:flex;flex-direction:column;gap:6px"></div>
+      </div>
+    </div>
     <button class="btn btn-fire" onclick="startGame()" style="margin-top:auto">▶ Demarrer</button>
   </div>
 </div>
@@ -421,7 +432,7 @@ const GENRES = [
     plQueries:['rap francais hits','hip hop hits','rap 2020','trap music hits','rap us hits','rap classique hits','hip hop 2010','rap mainstream hits','urban hits','rap top charts'] },
 ];
 
-const GUESSES = [
+let GUESSES = [
   { id:'g1', label:'Nb de mots',     emoji:'🔢', color:'#ff4560', hint:'Combien de mots dans le titre ?' },
   { id:'g2', label:'Double Shot',    emoji:'🍺', color:'#ffb300', hint:"Reponds a 2 categories - ou achete la case pour 5 gorgees !" },
   { id:'g3', label:'Artiste/Groupe', emoji:'🎤', color:'#00e096', hint:"Nomme l'artiste ou le groupe" },
@@ -531,9 +542,13 @@ function confirmCustomGenre() {
 // ═══════════════════════════════════════
 function goTo(s) {
   // Stop audio when leaving the game flow
-  if (['home','genre-select','setup'].includes(s)) {
+  if (['home','genre-select'].includes(s)) {
     if (G.audio) { G.audio.pause(); G.audio=null; }
     clearInterval(G.progTimer); G.progTimer=null; G.isPlaying=false;
+    resetCustomWheel();
+    // Reset custom wheel UI
+    const tog = document.getElementById('custom-wheel-toggle');
+    if (tog) { tog.checked = false; document.getElementById('custom-wheel-inputs').style.display='none'; document.getElementById('custom-wheel-fields').innerHTML=''; }
   }
   G.prevScreen = document.querySelector('.screen.active')?.id || 'home';
   document.querySelectorAll('.screen').forEach(x => x.classList.remove('active'));
@@ -580,6 +595,47 @@ function addPlayer() {
   inp.value = ''; renderPList();
 }
 function removePlayer(i) { G.players.splice(i,1); renderPList(); }
+const DEFAULT_GUESSES = [
+  { id:'g1', label:'Nb de mots',     emoji:'🔢', color:'#ff4560', hint:'Combien de mots dans le titre ?' },
+  { id:'g2', label:'Double Shot',    emoji:'🍺', color:'#ffb300', hint:"Reponds a 2 categories - ou achete la case pour 5 gorgees !" },
+  { id:'g3', label:'Artiste/Groupe', emoji:'🎤', color:'#00e096', hint:"Nomme l'artiste ou le groupe" },
+  { id:'g4', label:'Titre',          emoji:'🎵', color:'#4da6ff', hint:'Donne le titre exact' },
+  { id:'g5', label:'+/- 3 ans',      emoji:'⏱️', color:'#b96fff', hint:"L'annee a +/- 3 ans pres" },
+];
+
+function toggleCustomWheel() {
+  const on = document.getElementById('custom-wheel-toggle').checked;
+  const wrap = document.getElementById('custom-wheel-inputs');
+  wrap.style.display = on ? 'flex' : 'none';
+  if (on) buildCustomWheelFields();
+}
+
+function buildCustomWheelFields() {
+  const container = document.getElementById('custom-wheel-fields');
+  if (container.children.length > 0) return; // already built
+  GUESSES.forEach((g, i) => {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:8px';
+    row.innerHTML = `<span style="font-size:16px;width:24px;text-align:center">${g.emoji}</span>
+      <input type="text" value="${g.label}" maxlength="24"
+        style="flex:1;background:var(--surf);border:1.5px solid ${g.color}60;border-radius:10px;
+        padding:10px 12px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;outline:none"
+        oninput="updateCustomGuess(${i}, this.value)">`;
+    container.appendChild(row);
+  });
+}
+
+function updateCustomGuess(idx, val) {
+  if (!val.trim()) return;
+  GUESSES[idx] = { ...GUESSES[idx], label: val.trim(), hint: val.trim() };
+}
+
+function resetCustomWheel() {
+  // Reset GUESSES to defaults when leaving setup
+  GUESSES.length = 0;
+  DEFAULT_GUESSES.forEach(g => GUESSES.push({...g}));
+}
+
 function changeArtistLimit(d) {
   const el = document.getElementById('artist-limit-val');
   if (!el) return;
