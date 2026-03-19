@@ -245,7 +245,7 @@ canvas#wcanvas{border-radius:50%;box-shadow:0 0 0 3px #1e1e2a,0 0 40px rgba(0,0,
   <div class="topbar">
     <div class="back" onclick="goTo('setup')">←</div>
     <div class="ptitle">Tour <span id="spin-num">1</span></div>
-    
+
   </div>
   <div class="spin-wrap">
     <div class="genre-banner" id="spin-genre-banner">—</div>
@@ -268,7 +268,7 @@ canvas#wcanvas{border-radius:50%;box-shadow:0 0 0 3px #1e1e2a,0 0 40px rgba(0,0,
   <div class="topbar">
     <div class="back" onclick="goTo('spin-screen')">←</div>
     <div class="ptitle">Ecoute !</div>
-    
+
   </div>
   <div class="play-wrap">
     <div class="mystery-art">
@@ -385,21 +385,13 @@ canvas#wcanvas{border-radius:50%;box-shadow:0 0 0 3px #1e1e2a,0 0 40px rgba(0,0,
 // ═══════════════════════════════════════
 const GENRES = [
   { id:'rock',   label:'Rock',        emoji:'🎸', color:'#e84393', bg:'rgba(232,67,147,.15)', desc:"Classic rock, indie, alternatif",
-    plQueries:['rock classics','greatest rock hits','best rock songs','rock anthems','rock hits radio','rock legends playlist'] },
-  { id:'summer', label:'Summer Pop',  emoji:'☀️', color:'#ffd600', bg:'rgba(255,214,0,.15)',  desc:"Pop estivale et bangers",
-    plQueries:['pop hits','top hits','pop radio hits','hits pop 2010','pop hits 2000s','billboard pop','mega hits pop','pop classics'] },
-  { id:'qc',     label:'Quebec Hits', emoji:'🎉', color:'#ff6b35', bg:'rgba(255,107,53,.15)', desc:"Les meilleurs hits du Québec",
-    plQueries:['hits quebecois','top quebec','pop quebec hits','musique quebec radio','hits francophones canada'] },
+    plQueries:['rock classique','classic rock hits','rock 90s','rock 2000s','hard rock','alternative rock','rock indie hits','grunge hits','rock legends','rock radio'] },
+  { id:'summer', label:'Summer Pop',  emoji:'☀️', color:'#ffd600', bg:'rgba(255,214,0,.15)', desc:"Pop estivale et bangers",
+    plQueries:['summer pop hits','hits ete','pop radio summer','summer anthem','beach hits','summer party hits','pop summer 2010','top summer hits','summer 2015','summer vibes'] },
+  { id:'qc',     label:'Quebec Hits', emoji:'🎉', color:'#ff6b35', bg:'rgba(255,107,53,.15)', desc:"Les meilleurs hits du Quebec",
+    plQueries:['hits quebecois','chanson quebecoise','pop quebec','rock quebecois','francophone quebec','artistes quebecois','hits canada francais','musique quebec'] },
   { id:'rap',    label:'Rap Music',   emoji:'🎤', color:'#00d4ff', bg:'rgba(0,212,255,.15)', desc:"Hip-hop, rap, trap",
-    plQueries:['rap hits 2020','trap banger hits','rap top charts','hip hop hits 2015','rap mainstream top'] },
-];
-
-const GUESSES = [
-  { id:'g1', label:'Nb de mots',      emoji:'🔢', color:'#ff4560', hint:'Combien de mots dans le titre ?' },
-  { id:'g2', label:'Double Shot',      emoji:'🍺', color:'#ffb300', hint:"Réponds à 2 catégories — ou achète la case pour 5 gorgées !" },
-  { id:'g3', label:'Artiste/Groupe',  emoji:'🎤', color:'#00e096', hint:"Nomme l'artiste ou le groupe" },
-  { id:'g4', label:'Titre',           emoji:'🎵', color:'#4da6ff', hint:'Donne le titre exact' },
-  { id:'g5', label:'+/- 3 ans',       emoji:'⏱️', color:'#b96fff', hint:"L'année à +/- 3 ans près" },
+    plQueries:['rap francais hits','hip hop hits','rap 2020','trap music hits','rap us hits','rap classique hits','hip hop 2010','rap mainstream hits','urban hits','rap top charts'] },
 ];
 
 const AV_COLORS = ['#ff4560','#ffb300','#00e096','#4da6ff','#b96fff','#ff8c00','#00c8ff','#ff69b4'];
@@ -455,17 +447,18 @@ let G = {
 })();
 
 function showCustomGenre() {
-  const name = prompt("Quel genre de musique ?");
+  const name = prompt("Artiste ou genre ?\n(ex: Drake, Jazz, Annees 90, K-pop...)");
   if (!name || !name.trim()) return;
   const n = name.trim();
+  const genreKw = ['hits','music','pop','rock','rap','jazz','electro','annees','dance','party','vibes','classic','radio','top','best','playlist','hip','hop','trap','francais','funk','soul','blues','metal','country'];
+  const words = n.toLowerCase().split(/\s+/);
+  const isArtist = words.length <= 3 && !words.some(w => genreKw.includes(w));
   G.selectedGenre = {
-    id: 'custom',
-    label: n,
-    emoji: '🎵',
-    color: '#ffffff',
-    bg: 'rgba(255,255,255,.1)',
-    desc: n,
-    plQueries: [n, n + ' hits', n + ' playlist', n + ' music', 'best of ' + n]
+    id: 'custom', label: n, emoji: isArtist ? '🎤' : '🎵',
+    color: '#ffffff', bg: 'rgba(255,255,255,.1)',
+    desc: isArtist ? 'Chansons de ' + n : n,
+    isArtist: isArtist, artistName: isArtist ? n : null,
+    plQueries: isArtist ? [] : [n, n + ' hits', n + ' playlist', n + ' music', 'best of ' + n]
   };
   goTo('setup');
 }
@@ -562,58 +555,61 @@ async function startGame() {
     const g = G.selectedGenre;
     let tracks = [];
 
-    // Step 1: Search playlists on Deezer for this genre
-    msg.textContent = 'Recherche de playlists...';
-    let playlistIds = [];
-    for (const q of g.plQueries) {
-      if (playlistIds.length >= 15) break;
+    if (g.isArtist && g.artistName) {
+      // ARTIST MODE - only songs from this artist
+      msg.textContent = 'Recherche de ' + g.artistName + '...';
       try {
-        const data = await deezerGet('search/playlist?q=' + encodeURIComponent(q) + '&limit=10');
-        if (data?.data) data.data.forEach(p => { if (!playlistIds.includes(p.id)) playlistIds.push(p.id); });
-      } catch(e) { console.warn('Playlist search failed:', q); }
-    }
-
-    // Shuffle playlist IDs for variety each game
-    playlistIds = shuffle(playlistIds);
-
-    // Step 2: Load tracks from playlists with random offset
-    for (const plId of playlistIds) {
-      if (tracks.length >= 300) break;
-      try {
-        // Random offset across full playlist for maximum variety
-        const offset = Math.floor(Math.random() * 8) * 25;
-        msg.textContent = 'Chargement playlist... (' + tracks.length + ' titres)';
-        const data = await deezerGet('playlist/' + plId + '/tracks?limit=100&index=' + offset);
-        if (data?.data) {
-          data.data.forEach(t => {
-            if (t?.id && t.preview && t.title && !tracks.find(x=>x.id===t.id)) {
-              tracks.push(parseDeezerTrack(t));
-            }
-          });
-        }
-      } catch(e) { console.warn('Playlist load failed:', plId); }
-    }
-
-    // Enrich ALL tracks with release year in parallel batches of 10
-    msg.textContent = 'Chargement des années...';
-    const noYear = tracks.filter(t => !t.year);
-    for (let i = 0; i < noYear.length; i += 10) {
-      const batch = noYear.slice(i, i+10);
-      await Promise.all(batch.map(async t => {
-        try {
-          const detail = await deezerGet('track/' + t.id);
-          if (detail?.release_date) {
-            t.year = detail.release_date.substring(0,4);
-            t.album.release_date = detail.release_date;
-            if (!t.album.images?.[0]?.url && detail.album?.cover_medium) {
-              t.album.images = [{ url: detail.album.cover_medium }];
+        const artistData = await deezerGet('search/artist?q=' + encodeURIComponent(g.artistName) + '&limit=1');
+        if (artistData?.data?.[0]) {
+          const artistId = artistData.data[0].id;
+          msg.textContent = 'Chargement des chansons...';
+          const topData = await deezerGet('artist/' + artistId + '/top?limit=50');
+          if (topData?.data) topData.data.forEach(t => { if (t?.id && t.preview && t.title) tracks.push(parseDeezerTrack(t)); });
+          const albumData = await deezerGet('artist/' + artistId + '/albums?limit=15');
+          if (albumData?.data) {
+            for (const album of shuffle([...albumData.data]).slice(0,8)) {
+              if (tracks.length >= 150) break;
+              try {
+                const td = await deezerGet('album/' + album.id + '/tracks');
+                if (td?.data) td.data.forEach(t => { if (t?.id && t.preview && t.title && !tracks.find(x=>x.id===t.id)) tracks.push(parseDeezerTrack(t)); });
+              } catch(e) {}
             }
           }
-        } catch(e) {}
-      }));
+        }
+      } catch(e) { console.warn('Artist search failed:', e); }
+    } else {
+      // GENRE/PLAYLIST MODE
+      msg.textContent = 'Recherche de playlists...';
+      let playlistIds = [];
+      for (const q of g.plQueries) {
+        if (playlistIds.length >= 20) break;
+        try {
+          const data = await deezerGet('search/playlist?q=' + encodeURIComponent(q) + '&limit=10');
+          if (data?.data) data.data.forEach(p => { if (!playlistIds.includes(p.id)) playlistIds.push(p.id); });
+        } catch(e) { console.warn('Playlist search failed:', q); }
+      }
+      playlistIds = shuffle(playlistIds);
+      const usedArtists = new Map();
+      for (const plId of playlistIds) {
+        if (tracks.length >= 300) break;
+        try {
+          const offset = Math.floor(Math.random() * 10) * 20;
+          msg.textContent = 'Chargement playlist... (' + tracks.length + ' titres)';
+          const data = await deezerGet('playlist/' + plId + '/tracks?limit=50&index=' + offset);
+          if (data?.data) {
+            data.data.forEach(t => {
+              if (!t?.id || !t.preview || !t.title) return;
+              if (tracks.find(x=>x.id===t.id)) return;
+              const an = t.artist?.name || '';
+              const cnt = usedArtists.get(an) || 0;
+              if (cnt >= 3) return; // max 3 songs per artist
+              usedArtists.set(an, cnt + 1);
+              tracks.push(parseDeezerTrack(t));
+            });
+          }
+        } catch(e) { console.warn('Playlist load failed:', plId); }
+      }
     }
-    const withYear = tracks.filter(t => t.year).length;
-    msg.textContent = withYear + '/' + tracks.length + ' titres avec annee';
 
     if (tracks.length < 5) { ls.style.display='none'; showToast('Pas assez de titres (' + tracks.length + ')'); return; }
 
@@ -639,7 +635,7 @@ let spinning=false, wAngle=0;
 function initSpin() {
   const g = G.selectedGenre;
   document.getElementById('spin-num').textContent = G.turnNum;
-  
+
   const banner = document.getElementById('spin-genre-banner');
   if (g) {
     banner.style.cssText = `background:${g.bg};border-color:${g.color};color:${g.color};display:flex;align-items:center;gap:8px;padding:8px 14px;border-radius:12px;border:2px solid;font-size:13px;font-weight:600`;
@@ -715,7 +711,7 @@ function onSpinEnd() {
 // ═══════════════════════════════════════
 function initPlay() {
   const guess=G.currentGuess;
-  
+
   if (guess) {
     const pill=document.getElementById('play-guess-pill');
     pill.style.cssText=`background:${guess.color}18;border-color:${guess.color};color:${guess.color};display:flex;align-items:center;gap:8px;padding:9px 15px;border-radius:11px;border:2px solid;font-size:13px;font-weight:600`;
