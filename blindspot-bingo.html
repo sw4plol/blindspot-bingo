@@ -201,7 +201,7 @@ canvas#wcanvas{border-radius:50%;box-shadow:0 0 0 3px #1e1e2a,0 0 40px rgba(0,0,
     <button class="btn btn-ghost" onclick="goTo('leaderboard')">🏆 Classement</button>
     <button class="btn btn-ghost btn-sm" onclick="fullReset()" style="max-width:320px;opacity:.5">⟳ Réinitialiser</button>
   </div>
-  <div style="position:absolute;bottom:14px;left:16px;font-size:10px;color:rgba(255,255,255,.25);letter-spacing:1px;font-family:'DM Sans',sans-serif">v0.3318</div>
+  <div style="position:absolute;bottom:14px;left:16px;font-size:10px;color:rgba(255,255,255,.25);letter-spacing:1px;font-family:'DM Sans',sans-serif">v0.6236</div>
 </div>
 
 <!-- GENRE SELECT -->
@@ -1312,6 +1312,16 @@ function markCell(idx) {
   if (p.marked[idx]) return;
   if (p.card[idx]!==G.currentGuess.id) { showToast('Mauvaise case !'); return; }
   p.marked[idx]=G.currentGuess.id; p.score+=10;
+  // Add to history as correctly answered
+  const ht = G.gameTracks[G.currentTrackIdx];
+  if (ht && !G.history.find(h=>h.name===ht.name)) {
+    const hexp = ht.name.replace(/\([^)]*\)/g,'').replace(/\[[^\]]*\]/g,'').replace(/([a-zA-Z])'([a-zA-Z])/g,'$1 $2').replace(/[,\.!\?"]/g,' ').trim();
+    const hwc = hexp.split(/\s+/).filter(w=>w.length>0).length;
+    G.history.push({ name: ht.name, artist: ht.artists?.[0]?.name||'?', year: ht.year||'?', wordCount: hwc, img: ht.album?.images?.[0]?.url, skipped: false });
+  } else if (ht) {
+    const existing = G.history.find(h=>h.name===ht.name);
+    if (existing) existing.skipped = false;
+  }
   // Remember which song was marked
   if (!p.markedSongs) p.markedSongs = {};
   const ct = G.gameTracks[G.currentTrackIdx];
