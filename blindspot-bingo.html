@@ -336,10 +336,10 @@ canvas#wcanvas{border-radius:50%;box-shadow:0 0 0 3px #1e1e2a,0 0 40px rgba(0,0,
       <div class="blet">B</div><div class="blet">I</div><div class="blet">N</div><div class="blet">G</div><div class="blet">O</div>
     </div>
     <div class="bgrid" id="bgrid"></div>
-    <div class="bc-hint" id="bc-hint"></div>
+
     <div class="bc-actions">
       <button class="btn btn-ghost btn-sm" style="flex:1" onclick="goTo('player-select')">← Joueurs</button>
-      <button class="btn btn-sm" id="mark-btn" style="flex:1.5" onclick="toggleMark()">☑ Cocher</button>
+
     </div>
   </div>
 </div>
@@ -414,7 +414,6 @@ let G = {
   players: [],
   currentPlayer: null,
   prevScreen: 'home',
-  markMode: false,
   turnNum: 1,
   audio: null,
   isPlaying: false,
@@ -875,7 +874,7 @@ function renderPS() {
     btn.innerHTML=`<div class="ps-av" style="background:${p.color}20;color:${p.color};border:2px solid ${p.color}40">${p.name[0].toUpperCase()}</div>
       <div class="ps-info"><div class="ps-name">${esc(p.name)}</div><div class="ps-sub">${p.score} pts · ${cats}</div></div>
       <span style="color:var(--muted);font-size:17px">→</span>`;
-    btn.onclick=()=>{ G.currentPlayer=i; G.markMode=false; goTo('bingo-card'); };
+    btn.onclick=()=>{ G.currentPlayer=i; goTo('bingo-card'); };
     grid.appendChild(btn);
   });
 }
@@ -950,23 +949,16 @@ function renderCard() {
     leg.appendChild(d);
   });
 
+  // Show current category hint
   const hint=document.getElementById('bc-hint');
-  const mb=document.getElementById('mark-btn');
-  if (G.currentGuess) {
-    const cg=G.currentGuess;
-    if (G.markMode) {
-      hint.style.color=cg.color; hint.textContent=`Tape une case ${cg.emoji} a cocher`;
-      mb.style.cssText=`flex:1.5;background:${cg.color};color:#000;border:2px solid ${cg.color};border-radius:11px;padding:11px 14px;font-size:13px;font-weight:600;cursor:pointer`;
-      mb.textContent='✕ Annuler';
+  if (hint) {
+    if (G.currentGuess) {
+      const cg=G.currentGuess;
+      hint.style.color=cg.color;
+      hint.textContent=`${cg.emoji} ${cg.label} — touche une case surlignée`;
     } else {
-      hint.style.color='var(--muted)'; hint.textContent=`Devinette : ${cg.emoji} ${cg.label}`;
-      mb.style.cssText=`flex:1.5;background:${cg.color}18;color:${cg.color};border:2px solid ${cg.color};border-radius:11px;padding:11px 14px;font-size:13px;font-weight:600;cursor:pointer`;
-      mb.textContent=`☑ Cocher ${cg.emoji}`;
+      hint.textContent='';
     }
-  } else {
-    hint.textContent='';
-    mb.style.cssText='flex:1.5;background:var(--surf);color:var(--muted);border:2px solid var(--border);border-radius:11px;padding:11px 14px;font-size:13px;font-weight:600;cursor:pointer';
-    mb.textContent='☑ Cocher';
   }
 
   const winCells=new Set(getWinCells(p));
@@ -975,26 +967,34 @@ function renderCard() {
     const cat=GUESSES.find(g=>g.id===gid);
     const div=document.createElement('div'); div.className='bcell';
     const mw=p.marked[i]; const mc=mw?GUESSES.find(g=>g.id===mw):null;
+    const isCurrentCat = G.currentGuess && gid===G.currentGuess.id;
+
     if (mw) {
-      div.style.background=mc.color+'55'; div.style.borderColor=mc.color; div.style.boxShadow='0 0 0 1px '+mc.color+' inset';
+      // Already marked
+      div.style.background=mc.color+'55';
+      div.style.borderColor=mc.color;
+      div.style.boxShadow='0 0 0 1px '+mc.color+' inset';
       div.classList.add('marked');
       if (winCells.has(i)) div.classList.add('bingo-line');
       div.innerHTML=`<div class="ce">${mc.emoji}</div><div class="cl" style="color:${mc.color}">${mc.label.split('/')[0]}</div>`;
-      // Allow unmarking in mark mode if same category
-      if (G.markMode && G.currentGuess && mw === G.currentGuess.id) {
-        div.style.opacity='0.7'; div.style.cursor='pointer';
-        div.title='Cliquer pour décocher';
+      // Double-tap to unmark: same category
+      if (G.currentGuess && mw===G.currentGuess.id) {
+        div.style.cursor='pointer';
         div.onclick=()=>markCell(i);
       }
+    } else if (isCurrentCat) {
+      // Matching category — highlighted, 1 tap to mark
+      div.style.borderColor=G.currentGuess.color;
+      div.style.background=G.currentGuess.color+'22';
+      div.style.cursor='pointer';
+      div.classList.add('tap-me');
+      div.innerHTML=`<div class="ce">${cat.emoji}</div><div class="cl" style="color:${G.currentGuess.color}">${cat.label.split('/')[0]}</div>`;
+      div.onclick=()=>markCell(i);
     } else {
-      div.style.borderColor=cat.color+'30';
-      div.innerHTML=`<div class="ce" style="opacity:.4">${cat.emoji}</div><div class="cl">${cat.label.split('/')[0]}</div>`;
-      if (G.markMode&&G.currentGuess&&gid===G.currentGuess.id) {
-        div.style.borderColor=G.currentGuess.color; div.style.background=G.currentGuess.color+'18';
-        div.classList.add('tap-me'); div.style.color=G.currentGuess.color;
-        div.innerHTML=`<div class="ce">${G.currentGuess.emoji}</div><div class="cl" style="color:${G.currentGuess.color}">${G.currentGuess.label.split('/')[0]}</div>`;
-        div.onclick=()=>markCell(i);
-      } else if (G.markMode) { div.style.opacity='.3'; }
+      // Other category — dimmed
+      div.style.borderColor=cat.color+'25';
+      div.style.opacity= G.currentGuess ? '.35' : '1';
+      div.innerHTML=`<div class="ce" style="opacity:.5">${cat.emoji}</div><div class="cl">${cat.label.split('/')[0]}</div>`;
     }
     grid.appendChild(div);
   });
@@ -1002,7 +1002,7 @@ function renderCard() {
 
 function toggleMark() {
   if (!G.currentGuess) { showToast("Tourne la roue d'abord !"); return; }
-  G.markMode=!G.markMode; renderCard();
+  renderCard();
 }
 
 function markCell(idx) {
@@ -1010,7 +1010,7 @@ function markCell(idx) {
   const p=G.players[G.currentPlayer];
   if (p.marked[idx]) return;
   if (p.card[idx]!==G.currentGuess.id) { showToast('Mauvaise case !'); return; }
-  p.marked[idx]=G.currentGuess.id; p.score+=10; G.markMode=false;
+  p.marked[idx]=G.currentGuess.id; p.score+=10;
   const prevB=p.bingos; checkBingo(p); renderCard();
   if (p.bingos>prevB) {
     const g=G.selectedGenre;
