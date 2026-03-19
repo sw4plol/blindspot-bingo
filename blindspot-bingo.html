@@ -878,6 +878,8 @@ async function startGame() {
 // SPIN WHEEL
 // ═══════════════════════════════════════
 let spinning=false, wAngle=0;
+// wAngle is restored from localStorage before initSpin draws the wheel
+try { const _s=JSON.parse(localStorage.getItem('blindspot_state')||'{}'); if(_s.wa) wAngle=_s.wa; } catch(e){}
 
 function initSpin() {
   // Stop audio when arriving on spin screen (new turn)
