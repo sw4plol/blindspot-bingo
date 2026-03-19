@@ -901,9 +901,37 @@ function nextTurn() {
 // BINGO CARD
 // ═══════════════════════════════════════
 function genCard() {
-  const pool=[];
-  GUESSES.forEach(g=>{ for(let i=0;i<5;i++) pool.push(g.id); });
-  return shuffle(pool);
+  const pool = [];
+  GUESSES.forEach(g => { for(let i=0;i<5;i++) pool.push(g.id); });
+
+  function getNeighbors(idx) {
+    const r=Math.floor(idx/5), c=idx%5, nb=[];
+    for(let dr=-1;dr<=1;dr++) for(let dc=-1;dc<=1;dc++){
+      if(dr===0&&dc===0) continue;
+      const nr=r+dr,nc=c+dc;
+      if(nr>=0&&nr<5&&nc>=0&&nc<5) nb.push(nr*5+nc);
+    }
+    return nb;
+  }
+
+  const grid = new Array(25).fill(null);
+  const rem = shuffle([...pool]);
+
+  function tryPlace(pos) {
+    if(pos===25) return true;
+    const taken = new Set(getNeighbors(pos).map(n=>grid[n]).filter(Boolean));
+    const good = rem.filter(c=>!taken.has(c));
+    const opts = shuffle([...new Set(good.length>0 ? good : rem)]);
+    for(const cat of opts){
+      const idx=rem.indexOf(cat); if(idx===-1) continue;
+      grid[pos]=cat; rem.splice(idx,1);
+      if(tryPlace(pos+1)) return true;
+      rem.splice(idx,0,cat); grid[pos]=null;
+    }
+    return false;
+  }
+
+  return tryPlace(0) ? grid : shuffle(pool);
 }
 
 function renderCard() {
@@ -952,6 +980,12 @@ function renderCard() {
       div.classList.add('marked');
       if (winCells.has(i)) div.classList.add('bingo-line');
       div.innerHTML=`<div class="ce">${mc.emoji}</div><div class="cl" style="color:${mc.color}">${mc.label.split('/')[0]}</div>`;
+      // Allow unmarking in mark mode if same category
+      if (G.markMode && G.currentGuess && mw === G.currentGuess.id) {
+        div.style.opacity='0.7'; div.style.cursor='pointer';
+        div.title='Cliquer pour décocher';
+        div.onclick=()=>markCell(i);
+      }
     } else {
       div.style.borderColor=cat.color+'30';
       div.innerHTML=`<div class="ce" style="opacity:.4">${cat.emoji}</div><div class="cl">${cat.label.split('/')[0]}</div>`;
