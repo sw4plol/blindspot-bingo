@@ -201,7 +201,7 @@ canvas#wcanvas{border-radius:50%;box-shadow:0 0 0 3px #1e1e2a,0 0 40px rgba(0,0,
     <button class="btn btn-ghost" onclick="goTo('leaderboard')">🏆 Classement</button>
     <button class="btn btn-ghost btn-sm" onclick="fullReset()" style="max-width:320px;opacity:.5">⟳ Réinitialiser</button>
   </div>
-  <div style="position:absolute;bottom:14px;left:16px;font-size:10px;color:rgba(255,255,255,.25);letter-spacing:1px;font-family:'DM Sans',sans-serif">v0.1280</div>
+  <div style="position:absolute;bottom:14px;left:16px;font-size:10px;color:rgba(255,255,255,.25);letter-spacing:1px;font-family:'DM Sans',sans-serif">v0.9751</div>
 </div>
 
 <!-- GENRE SELECT -->
@@ -458,7 +458,8 @@ let G = {
   gameTracks: [],
   currentTrackIdx: 0,
   playedIds: new Set(),
-  history: [], // {name, artist, year, wordCount}
+  history: [],
+  hasSpun: false, // {name, artist, year, wordCount}
   currentGuess: null,
   players: [],
   currentPlayer: null,
@@ -902,9 +903,25 @@ function initSpin() {
     document.getElementById('spin-btn').style.background = `linear-gradient(130deg,${g.color},${g.color}99)`;
   }
   drawWheel(wAngle);
-  document.getElementById('result-pill').classList.remove('show');
-  document.getElementById('to-play-btn').style.display = 'none';
-  document.getElementById('spin-btn').disabled = false;
+  // Restore spin state if already spun this turn
+  if (G.hasSpun && G.currentGuess) {
+    const pill = document.getElementById('result-pill');
+    const guess = G.currentGuess;
+    pill.style.cssText = `width:min(88vw,340px);padding:12px 16px;border-radius:14px;border:2px solid ${guess.color};background:${guess.color}18;text-align:center;transition:opacity .3s`;
+    document.getElementById('rcat').innerHTML = `${guess.emoji} <span style="color:${guess.color}">${guess.label}</span>`;
+    document.getElementById('rhint').style.color = guess.color;
+    document.getElementById('rhint').textContent = guess.hint;
+    pill.classList.add('show');
+    const btn = document.getElementById('to-play-btn');
+    btn.style.display = '';
+    btn.style.borderColor = guess.color;
+    btn.style.color = guess.color;
+    document.getElementById('spin-btn').disabled = true;
+  } else {
+    document.getElementById('result-pill').classList.remove('show');
+    document.getElementById('to-play-btn').style.display = 'none';
+    document.getElementById('spin-btn').disabled = false;
+  }
   // Don't stop audio here — player may return to play screen
 }
 
@@ -971,6 +988,8 @@ function doSpin() {
 }
 
 function onSpinEnd() {
+  G.hasSpun = true;
+  saveState();
   const sl=Math.PI*2/GUESSES.length;
   let ptr=((-Math.PI/2)-wAngle)%(Math.PI*2);
   if(ptr<0) ptr+=Math.PI*2;
@@ -1254,6 +1273,7 @@ function nextTurn() {
   if (G.audio) { G.audio.pause(); G.audio=null; }
   // Add to history as skipped if nobody answered
   addToHistory(true);
+  G.hasSpun = false;
   G.turnNum++;
   G.currentGuess=null;
   // Mark current as played
@@ -1469,7 +1489,8 @@ function saveState() {
       h: G.history,
       q: G.currentGuess,
       u: G.currentPlayer,
-      sc: document.querySelector('.screen.active')?.id || 'home'
+      sc: document.querySelector('.screen.active')?.id || 'home',
+      hs: G.hasSpun
     };
     localStorage.setItem(SAVE_KEY, JSON.stringify(state));
   } catch(e) { console.warn('Save failed:', e.message); }
@@ -1499,6 +1520,7 @@ function restoreState() {
     G.history = state.h || [];
     G.currentGuess = state.q || null;
     G.currentPlayer = state.u || 0;
+    G.hasSpun = state.hs || false;
     G.playedIds = new Set();
 
     // Go to the saved screen (but not play-screen — restart from spin)
