@@ -809,7 +809,7 @@ async function startGame() {
 
     G.gameTracks = shuffle([...tracks]); // Keep ALL tracks, always shuffled
     G.playedIds = new Set(); // Track played songs to avoid repeats
-    G.currentTrackIdx = 0; G.turnNum = 1; G.currentGuess = null;
+    G.currentTrackIdx = 0; G.turnNum = 1; G.currentGuess = null; G.history = [];
     G.players.forEach(p => { p.card=genCard(); p.marked=new Array(25).fill(null); p.score=0; p.bingos=0; });
 
     ls.style.display = 'none';
@@ -1092,6 +1092,25 @@ function revealTrack() {
 }
 function closeReveal(){ document.getElementById('rev-overlay').classList.remove('show'); }
 
+function showHistory() {
+  if (!G.history || !G.history.length) { showToast("Aucune chanson jouee pour l'instant !"); return; }
+  const items = [...G.history].reverse().map(h =>
+    '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">' +
+    (h.img ? '<img src="'+h.img+'" style="width:40px;height:40px;border-radius:8px;object-fit:cover;flex-shrink:0">' : '<div style="width:40px;height:40px;border-radius:8px;background:var(--surf);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px">🎵</div>') +
+    '<div style="flex:1;min-width:0;text-align:left">' +
+    '<div style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(h.name)+'</div>' +
+    '<div style="font-size:11px;color:var(--muted);margin-top:2px">'+esc(h.artist)+' · 📅 '+h.year+' · 🔢 '+h.wordCount+' mot'+(h.wordCount>1?'s':'')+'</div>' +
+    '</div>' +
+    (h.skipped ? '<span style="font-size:10px;background:var(--surf);padding:2px 7px;border-radius:20px;color:var(--muted);flex-shrink:0">skippé</span>' : '<span style="font-size:14px;flex-shrink:0">✅</span>') +
+    '</div>'
+  ).join('');
+  document.getElementById('rev-content').innerHTML =
+    '<div style="font-size:13px;font-weight:600;margin-bottom:8px;color:var(--muted)">'+G.history.length+' chanson'+(G.history.length>1?'s':'')+' jouée'+(G.history.length>1?'s':'')+'</div>' +
+    '<div style="text-align:left;max-height:52vh;overflow-y:auto">'+items+'</div>';
+  document.querySelector('#rev-overlay .modal-title').textContent = '📋 Historique';
+  document.getElementById('rev-overlay').classList.add('show');
+}
+
 // ═══════════════════════════════════════
 // PLAYER SELECT
 // ═══════════════════════════════════════
@@ -1258,8 +1277,14 @@ function toggleMark() {
 function unmarkCell(idx) {
   const p=G.players[G.currentPlayer];
   if (!p.marked[idx]) return;
+  // Only allow unmarking if it matches the current guess category
+  if (G.currentGuess && p.marked[idx] !== G.currentGuess.id) {
+    showToast('Tu peux seulement décocher une case de la catégorie active !');
+    return;
+  }
   p.marked[idx]=null;
   p.score=Math.max(0,p.score-10);
+  if (p.markedSongs) delete p.markedSongs[idx];
   showToast('Case décochée');
   renderCard();
 }
