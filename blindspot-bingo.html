@@ -201,7 +201,7 @@ canvas#wcanvas{border-radius:50%;box-shadow:0 0 0 3px #1e1e2a,0 0 40px rgba(0,0,
     <button class="btn btn-ghost" onclick="goTo('leaderboard')">🏆 Classement</button>
     <button class="btn btn-ghost btn-sm" onclick="fullReset()" style="max-width:320px;opacity:.5">⟳ Réinitialiser</button>
   </div>
-  <div style="position:absolute;bottom:14px;left:16px;font-size:10px;color:rgba(255,255,255,.25);letter-spacing:1px;font-family:'DM Sans',sans-serif">v0.4500</div>
+  <div style="position:absolute;bottom:14px;left:16px;font-size:10px;color:rgba(255,255,255,.25);letter-spacing:1px;font-family:'DM Sans',sans-serif">v0.5561</div>
 </div>
 
 <!-- GENRE SELECT -->
@@ -1018,15 +1018,13 @@ function initPlay() {
   if (G.audio && !G.audio.paused) {
     // Returning from player-select — audio still playing, keep UI in sync
     document.getElementById('audio-ctrl').style.display='';
-    document.getElementById('play-start-btn').style.display='none';
-    document.getElementById('pp-btn').textContent='⏸';
+      document.getElementById('pp-btn').textContent='⏸';
     G.isPlaying=true;
     if (!G.progTimer) G.progTimer = setInterval(updateProgress, 200);
   } else if (!G.audio) {
     // New track — show controls immediately, autoplay after 0.3s
     document.getElementById('audio-ctrl').style.display='';
-    document.getElementById('play-start-btn').style.display='none';
-    document.getElementById('pp-btn').textContent='▶';
+      document.getElementById('pp-btn').textContent='▶';
     G.isPlaying=false;
     clearInterval(G.progTimer);
     document.getElementById('prog-fill').style.width='0%';
@@ -1035,8 +1033,7 @@ function initPlay() {
   } else {
     // Audio exists but paused — show controls
     document.getElementById('audio-ctrl').style.display='';
-    document.getElementById('play-start-btn').style.display='none';
-    document.getElementById('pp-btn').textContent='▶';
+      document.getElementById('pp-btn').textContent='▶';
   }
 }
 
@@ -1067,7 +1064,6 @@ async function startPlayback() {
   const track = G.gameTracks[G.currentTrackIdx];
   if (!track?.preview_url) { showToast('Pas de preview pour cette chanson'); return; }
 
-  document.getElementById('play-start-btn').style.display = 'none';
   document.getElementById('audio-ctrl').style.display = '';
 
   if (G.audio) { G.audio.pause(); G.audio = null; }
