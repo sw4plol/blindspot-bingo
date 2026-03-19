@@ -801,25 +801,44 @@ function setVol(v) {
 }
 function fmt(s){ const m=Math.floor(s/60),sc=Math.floor(s%60); return m+':'+(sc<10?'0':'')+sc; }
 
-function revealTrack() {
-  const t=G.gameTracks[G.currentTrackIdx];
-  if (!t) { showToast('Aucune chanson active'); return; }
-  const artist=t.artists?.map(a=>a.name).join(', ')||'?';
-  const img=t.album?.images?.[0]?.url;
-  const year=t.year||t.album?.release_date?.substring(0,4)||'?';
-  const cleanTitle = t.name.replace(/[\(\)\[\]\{\}\'\"\,\.\!\?\-\_]/g,'').trim();
-  const wordCount = cleanTitle.split(/\s+/).filter(w=>w.length>0).length;
-  document.getElementById('rev-content').innerHTML=`
-    ${img?`<img class="rev-img" src="${img}" onerror="this.style.display='none'">`:''}
-    <div class="rev-track">${esc(t.name)}</div>
-    <div class="rev-artist">${esc(artist)}</div>
-    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:4px">
-      <div style="color:var(--g2);font-size:12px;font-weight:600">📅 ${year}</div>
-      <div style="color:#ff4560;font-size:12px;font-weight:600">🔢 ${wordCount} mot${wordCount>1?'s':''} dans le titre</div>
-    </div>
-    <div style="font-size:10px;color:var(--muted);margin-top:4px">⚠️ Annee selon Deezer (peut etre une reedition)</div>
-    <div style="font-size:11px;color:#ffb300;margin-top:2px" id="member-info"></div>`;
-  document.getElementById('rev-overlay').classList.add('show');
+async function revealTrack() {
+   const t=G.gameTracks[G.currentTrackIdx];
+   if (!t) { showToast("Aucune chanson active"); return; }
+   const artist=t.artists?.map(a=>a.name).join(", ")||"?";
+   const img=t.album?.images?.[0]?.url;
+   const year=t.year||t.album?.release_date?.substring(0,4)||"?";
+   const expandedTitle = t.name
+     .replace(/[\(\)\[\]\{\}"\,\.\!\?]/g," ")
+     .replace(/([a-zA-Z])\'([a-zA-Z])/g, '$1 $2')
+     .trim();
+   const wordCount = expandedTitle.split(/\s+/).filter(w=>w.length>0).length;
+   document.getElementById("rev-content").innerHTML=
+     (img ? `<img class="rev-img" src="${img}" onerror="this.style.display='none'">` : "") +
+     `<div class="rev-track">${esc(t.name)}</div>` +
+     `<div class="rev-artist">${esc(artist)}</div>` +
+     `<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:6px">` +
+       `<div style="color:var(--g2);font-size:12px;font-weight:600;background:var(--surf);padding:4px 10px;border-radius:20px">📅 ${year}</div>` +
+       `<div style="color:#ff4560;font-size:12px;font-weight:600;background:var(--surf);padding:4px 10px;border-radius:20px">🔢 ${wordCount} mot${wordCount>1?"s":""}</div>` +
+       `<div id="member-badge" style="color:#ffb300;font-size:12px;font-weight:600;background:var(--surf);padding:4px 10px;border-radius:20px">👥 ...</div>` +
+     `</div>` +
+     `<div style="font-size:10px;color:var(--muted);margin-top:4px">⚠️ Annee selon Deezer (peut etre une reedition)</div>`;
+   document.getElementById("rev-overlay").classList.add("show");
+   // Fetch member count
+   try {
+     const search = await deezerGet("search/artist?q=" + encodeURIComponent(t.artists?.[0]?.name || "") + "&limit=1");
+     const az = search?.data?.[0];
+     const badge = document.getElementById("member-badge");
+     if (az && badge) {
+       const detail = await deezerGet("artist/" + az.id);
+       const nb = detail?.nb_member;
+       if (nb === 1) badge.textContent = "👤 Solo";
+       else if (nb > 1) badge.textContent = "👥 Groupe — " + nb + " membre" + (nb>1?"s":"");
+       else badge.textContent = "👥 Solo ou groupe ?";
+     }
+   } catch(e) {
+     const b = document.getElementById("member-badge");
+     if (b) b.textContent = "👥 ?";
+   }
 }
 function closeReveal(){ document.getElementById('rev-overlay').classList.remove('show'); }
 
