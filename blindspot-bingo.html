@@ -695,6 +695,12 @@ async function deezerGet(path) {
   return data;
 }
 
+function isLiveTrack(title) {
+  if (!title) return false;
+  const t = title.toLowerCase();
+  return /\b(live|en direct|concert|tour|unplugged|acoustic version|live version|live at|live in|live from|recorded live|\blive\b)\b/.test(t);
+}
+
 function parseDeezerTrack(t) {
   return {
     id: t.id,
@@ -731,14 +737,14 @@ async function startGame() {
           const artistId = artistData.data[0].id;
           msg.textContent = 'Chargement des chansons...';
           const topData = await deezerGet('artist/' + artistId + '/top?limit=50');
-          if (topData?.data) topData.data.forEach(t => { if (t?.id && t.preview && t.title) tracks.push(parseDeezerTrack(t)); });
+          if (topData?.data) topData.data.forEach(t => { if (t?.id && t.preview && t.title && !isLiveTrack(t.title)) tracks.push(parseDeezerTrack(t)); });
           const albumData = await deezerGet('artist/' + artistId + '/albums?limit=15');
           if (albumData?.data) {
             for (const album of shuffle([...albumData.data]).slice(0,8)) {
               if (tracks.length >= 150) break;
               try {
                 const td = await deezerGet('album/' + album.id + '/tracks');
-                if (td?.data) td.data.forEach(t => { if (t?.id && t.preview && t.title && !tracks.find(x=>x.id===t.id)) tracks.push(parseDeezerTrack(t)); });
+                if (td?.data) td.data.forEach(t => { if (t?.id && t.preview && t.title && !isLiveTrack(t.title) && !tracks.find(x=>x.id===t.id)) tracks.push(parseDeezerTrack(t)); });
               } catch(e) {}
             }
           }
@@ -767,6 +773,7 @@ async function startGame() {
           if (data?.data) {
             data.data.forEach(t => {
               if (!t?.id || !t.preview || !t.title) return;
+              if (isLiveTrack(t.title)) return;
               if (tracks.find(x=>x.id===t.id)) return;
               const an = t.artist?.name || '';
               const cnt = usedArtists.get(an) || 0;
