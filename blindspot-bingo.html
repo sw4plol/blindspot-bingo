@@ -201,7 +201,7 @@ canvas#wcanvas{border-radius:50%;box-shadow:0 0 0 3px #1e1e2a,0 0 40px rgba(0,0,
     <button class="btn btn-ghost" onclick="goTo('leaderboard')">🏆 Classement</button>
     <button class="btn btn-ghost btn-sm" onclick="fullReset()" style="max-width:320px;opacity:.5">⟳ Réinitialiser</button>
   </div>
-  <div style="position:absolute;bottom:14px;left:16px;font-size:10px;color:rgba(255,255,255,.25);letter-spacing:1px;font-family:'DM Sans',sans-serif">v0.8723</div>
+  <div style="position:absolute;bottom:14px;left:16px;font-size:10px;color:rgba(255,255,255,.25);letter-spacing:1px;font-family:'DM Sans',sans-serif">v0.5578</div>
 </div>
 
 <!-- GENRE SELECT -->
@@ -572,8 +572,8 @@ function goTo(s) {
      'player-select':renderPS, 'bingo-card':renderCard, leaderboard:renderLB })[s]?.();
 }
 function goBack() { goTo(G.prevScreen || 'home'); }
-function fullReset() { if(G.audio){G.audio.pause();G.audio=null;} location.reload(); }
-function newGame() { G.players=[]; G.gameTracks=[]; if(G.audio){G.audio.pause();G.audio=null;} goTo('home'); }
+function fullReset() { clearSave(); if(G.audio){G.audio.pause();G.audio=null;} location.reload(); }
+function newGame() { clearSave(); G.players=[]; G.gameTracks=[]; if(G.audio){G.audio.pause();G.audio=null;} goTo('home'); }
 
 // ═══════════════════════════════════════
 // SETUP
@@ -624,7 +624,7 @@ function addPlayer() {
   if (!name) return;
   if (G.players.length >= 8) { showToast('Max 8 joueurs'); return; }
   G.players.push({ name, color:AV_COLORS[G.players.length%AV_COLORS.length], card:null, marked:[], score:0, bingos:0 });
-  inp.value = ''; renderPList();
+  inp.value = ''; saveState(); renderPList();
 }
 function removePlayer(i) { G.players.splice(i,1); renderPList(); }
 const DEFAULT_GUESSES = [
@@ -1264,6 +1264,7 @@ function nextTurn() {
   while (next < G.gameTracks.length && G.playedIds.has(G.gameTracks[next].id)) next++;
   if (next >= G.gameTracks.length) { G.gameTracks = shuffle([...G.gameTracks]); next = 0; }
   G.currentTrackIdx = next;
+  saveState();
   goTo('spin-screen');
 }
 
@@ -1403,7 +1404,7 @@ function markCell(idx) {
   if (!p.markedSongs) p.markedSongs = {};
   const ct = G.gameTracks[G.currentTrackIdx];
   if (ct) p.markedSongs[idx] = ct.name + ' — ' + (ct.artists?.[0]?.name||'?');
-  const prevB=p.bingos; checkBingo(p); renderCard();
+  const prevB=p.bingos; checkBingo(p); saveState(); renderCard();
   if (p.bingos>prevB) {
     const g=G.selectedGenre;
     document.getElementById('win-who').innerHTML=`${p.name} <span style="color:${g?g.color:'#ffb300'}">${g?g.emoji:''}</span>`;
@@ -1438,6 +1439,67 @@ function renderLB(){
 // ═══════════════════════════════════════
 // UTILS
 // ═══════════════════════════════════════
+
+// ═══════════════════════════════════════
+// SAVE / RESTORE STATE
+// ═══════════════════════════════════════
+const SAVE_KEY = 'blindspot_state';
+
+function saveState() {
+  try {
+    const state = {
+      selectedGenre: G.selectedGenre,
+      players: G.players.map(p => ({
+        name: p.name, color: p.color, score: p.score, bingos: p.bingos,
+        card: p.card, marked: p.marked, markedSongs: p.markedSongs || {}
+      })),
+      gameTracks: G.gameTracks,
+      currentTrackIdx: G.currentTrackIdx,
+      turnNum: G.turnNum,
+      history: G.history,
+      currentGuess: G.currentGuess,
+      currentPlayer: G.currentPlayer,
+      currentScreen: document.querySelector('.screen.active')?.id || 'home'
+    };
+    localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+  } catch(e) { console.warn('Save failed:', e); }
+}
+
+function restoreState() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return false;
+    const state = JSON.parse(raw);
+    if (!state.gameTracks?.length || !state.players?.length) return false;
+
+    G.selectedGenre = state.selectedGenre;
+    G.players = state.players;
+    G.gameTracks = state.gameTracks;
+    G.currentTrackIdx = state.currentTrackIdx || 0;
+    G.turnNum = state.turnNum || 1;
+    G.history = state.history || [];
+    G.currentGuess = state.currentGuess || null;
+    G.currentPlayer = state.currentPlayer || 0;
+    G.playedIds = new Set();
+
+    // Go to the saved screen (but not play-screen — restart from spin)
+    const screen = state.currentScreen;
+    const safeScreen = ['spin-screen','player-select','bingo-card','leaderboard'].includes(screen)
+      ? screen : 'spin-screen';
+    goTo(safeScreen);
+    showToast('Partie restaurée ! 🎉');
+    return true;
+  } catch(e) {
+    console.warn('Restore failed:', e);
+    localStorage.removeItem(SAVE_KEY);
+    return false;
+  }
+}
+
+function clearSave() {
+  localStorage.removeItem(SAVE_KEY);
+}
+
 function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]; } return a; }
 function esc(s){ const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
 
