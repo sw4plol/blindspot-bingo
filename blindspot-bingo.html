@@ -201,7 +201,7 @@ canvas#wcanvas{border-radius:50%;box-shadow:0 0 0 3px #1e1e2a,0 0 40px rgba(0,0,
     <button class="btn btn-ghost" onclick="goTo('leaderboard')">🏆 Classement</button>
     <button class="btn btn-ghost btn-sm" onclick="fullReset()" style="max-width:320px;opacity:.5">⟳ Réinitialiser</button>
   </div>
-  <div style="position:absolute;bottom:14px;left:16px;font-size:10px;color:rgba(255,255,255,.25);letter-spacing:1px;font-family:'DM Sans',sans-serif">v0.9139</div>
+  <div style="position:absolute;bottom:14px;left:16px;font-size:10px;color:rgba(255,255,255,.25);letter-spacing:1px;font-family:'DM Sans',sans-serif">v0.2991</div>
 </div>
 
 <!-- GENRE SELECT -->
@@ -881,7 +881,6 @@ let spinning=false, wAngle=0;
 function initSpin() {
   // Stop audio when arriving on spin screen (new turn)
   if (G.audio) { G.audio.pause(); G.audio=null; }
-  if (G_audioCtx && G_audioCtx.state === 'running') G_audioCtx.suspend();
   clearInterval(G.progTimer); G.progTimer=null; G.isPlaying=false;
   const g = G.selectedGenre;
   document.getElementById('spin-num').textContent = G.turnNum;
@@ -928,21 +927,19 @@ function drawWheel(rot) {
   ctx.fillStyle='#09090b'; ctx.fill(); ctx.strokeStyle='#1e1e2a'; ctx.lineWidth=3; ctx.stroke();
 }
 
-let G_clickCtx = null;
 function playClick(vol=0.08) {
   try {
-    if (!G_clickCtx || G_clickCtx.state === 'closed') {
-      G_clickCtx = new (window.AudioContext||window.webkitAudioContext)();
-    }
-    if (G_clickCtx.state === 'suspended') G_clickCtx.resume();
-    const buf = G_clickCtx.createBuffer(1,512,G_clickCtx.sampleRate);
+    // Use a fresh throwaway context for clicks to avoid interfering with music
+    const ac = new (window.AudioContext||window.webkitAudioContext)();
+    const buf = ac.createBuffer(1,512,ac.sampleRate);
     const d = buf.getChannelData(0);
     for(let i=0;i<512;i++) d[i]=(Math.random()*2-1)*Math.exp(-i/80);
-    const src = G_clickCtx.createBufferSource();
+    const src = ac.createBufferSource();
     src.buffer = buf;
-    const g = G_clickCtx.createGain(); g.gain.value = vol;
-    src.connect(g); g.connect(G_clickCtx.destination);
-    src.start(); src.stop(G_clickCtx.currentTime+0.05);
+    const g = ac.createGain(); g.gain.value = vol;
+    src.connect(g); g.connect(ac.destination);
+    src.start();
+    src.onended = () => ac.close(); // close immediately after playing
   } catch(e) {}
 }
 
@@ -1024,21 +1021,9 @@ function initPlay() {
 }
 
 // Web Audio context for normalization
-let G_audioCtx = null;
-let G_gainNode = null;
-
-function getAudioCtx() {
-  if (!G_audioCtx) {
-    G_audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    G_gainNode = G_audioCtx.createGain();
-    G_gainNode.connect(G_audioCtx.destination);
-  }
-  return { ctx: G_audioCtx, gain: G_gainNode };
-}
 
 function stopAndGoTo(s) {
   if (G.audio) { G.audio.pause(); G.audio=null; }
-  if (G_audioCtx && G_audioCtx.state === 'running') G_audioCtx.suspend();
   clearInterval(G.progTimer); G.progTimer=null; G.isPlaying=false;
   goTo(s);
 }
@@ -1267,7 +1252,6 @@ function nextTurn() {
   clearInterval(G.progTimer);
   G.progTimer = null;
   if (G.audio) { G.audio.pause(); G.audio=null; }
-  if (G_audioCtx && G_audioCtx.state === 'running') G_audioCtx.suspend();
   // Add to history as skipped if nobody answered
   addToHistory(true);
   G.turnNum++;
