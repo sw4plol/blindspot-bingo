@@ -484,6 +484,11 @@ function showCustomGenre() {
 // NAVIGATION
 // ═══════════════════════════════════════
 function goTo(s) {
+  // Stop audio when leaving the game flow
+  if (['home','genre-select','setup'].includes(s)) {
+    if (G.audio) { G.audio.pause(); G.audio=null; }
+    clearInterval(G.progTimer); G.progTimer=null; G.isPlaying=false;
+  }
   G.prevScreen = document.querySelector('.screen.active')?.id || 'home';
   document.querySelectorAll('.screen').forEach(x => x.classList.remove('active'));
   document.getElementById(s).classList.add('active');
