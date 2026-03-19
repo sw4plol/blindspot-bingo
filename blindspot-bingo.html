@@ -201,7 +201,7 @@ canvas#wcanvas{border-radius:50%;box-shadow:0 0 0 3px #1e1e2a,0 0 40px rgba(0,0,
     <button class="btn btn-ghost" onclick="goTo('leaderboard')">🏆 Classement</button>
     <button class="btn btn-ghost btn-sm" onclick="fullReset()" style="max-width:320px;opacity:.5">⟳ Réinitialiser</button>
   </div>
-  <div style="position:absolute;bottom:14px;left:16px;font-size:10px;color:rgba(255,255,255,.25);letter-spacing:1px;font-family:'DM Sans',sans-serif">v0.1619</div>
+  <div style="position:absolute;bottom:14px;left:16px;font-size:10px;color:rgba(255,255,255,.25);letter-spacing:1px;font-family:'DM Sans',sans-serif">v0.5661</div>
 </div>
 
 <!-- GENRE SELECT -->
@@ -995,12 +995,13 @@ function initPlay() {
     pill.style.cssText=`background:${guess.color}18;border-color:${guess.color};color:${guess.color};display:flex;align-items:center;gap:8px;padding:9px 15px;border-radius:11px;border:2px solid;font-size:13px;font-weight:600`;
     pill.innerHTML=`${guess.emoji} <strong>${guess.label}</strong> — ${guess.hint}`;
   }
-  if (G.audio && G.isPlaying) {
-    // Returning from player-select — keep playing, just update UI
+  if (G.audio && !G.audio.paused) {
+    // Returning from player-select — audio still playing, keep UI in sync
     document.getElementById('audio-ctrl').style.display='';
     document.getElementById('play-start-btn').style.display='none';
     document.getElementById('pp-btn').textContent='⏸';
-    G.progTimer = G.progTimer || setInterval(updateProgress, 200);
+    G.isPlaying=true;
+    if (!G.progTimer) G.progTimer = setInterval(updateProgress, 200);
   } else if (!G.audio) {
     // New track — show play button
     document.getElementById('audio-ctrl').style.display='none';
@@ -1054,7 +1055,7 @@ function goToPlay() {
   setTimeout(() => startPlayback(), 300);
 }
 
-function startPlayback() {
+async function startPlayback() {
   const track=G.gameTracks[G.currentTrackIdx];
   if (!track?.preview_url) { showToast('Pas de preview pour cette chanson'); return; }
 
@@ -1067,7 +1068,7 @@ function startPlayback() {
   G.audio.crossOrigin = 'anonymous';
 
   try {
-    // Keep one AudioContext alive — recreating it causes issues on mobile
+    // Keep one AudioContext alive
     if (!G_audioCtx || G_audioCtx.state === 'closed') {
       G_audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       G_gainNode = G_audioCtx.createGain();
@@ -1081,7 +1082,9 @@ function startPlayback() {
       G_gainNode.connect(masterCompressor);
       masterCompressor.connect(G_audioCtx.destination);
     }
-    if (G_audioCtx.state === 'suspended') G_audioCtx.resume();
+    // Resume context BEFORE connecting source to avoid click/distortion
+    if (G_audioCtx.state === 'suspended') { G_audioCtx.resume(); }
+    await new Promise(r => setTimeout(r, 50)); // small delay to let context resume
 
     const source = G_audioCtx.createMediaElementSource(G.audio);
 
@@ -1099,7 +1102,14 @@ function startPlayback() {
     G.audio.volume = 0.8;
   }
 
-  G.audio.play().catch(e => showToast('Erreur audio : '+e.message));
+  // Resume context first to avoid distortion click
+  if (G_audioCtx && G_audioCtx.state === 'suspended') {
+    G_audioCtx.resume().then(() => {
+      G.audio.play().catch(e => showToast('Erreur audio : '+e.message));
+    });
+  } else {
+    G.audio.play().catch(e => showToast('Erreur audio : '+e.message));
+  }
   G.isPlaying=true;
   document.getElementById('pp-btn').textContent='⏸';
 
@@ -1231,15 +1241,32 @@ function skipTrack() {
     const year = t.year || '?';
     const expanded = t.name.replace(/\([^)]*\)/g,'').replace(/\[[^\]]*\]/g,'').replace(/([a-zA-Z])'([a-zA-Z])/g,'$1 $2').replace(/[,\.!\?"]/g,' ').trim();
     const wc = expanded.split(/\s+/).filter(w=>w.length>0).length;
-    // nextTurn will add to history as skipped
+
   }
   nextTurn();
+}
+
+function addToHistory(skipped) {
+  const ct = G.gameTracks[G.currentTrackIdx];
+  if (!ct) return;
+  const existing = G.history.find(h => h.name === ct.name);
+  if (existing) {
+    if (!skipped) existing.skipped = false; // upgrade skip to answered
+    return;
+  }
+  const exp = ct.name.replace(/\([^)]*\)/g,'').replace(/\[[^\]]*\]/g,'')
+    .replace(/([a-zA-Z])'([a-zA-Z])/g,'$1 $2').replace(/[,\.!\?"]/g,' ').trim();
+  const wc = exp.split(/\s+/).filter(w=>w.length>0).length;
+  G.history.push({ name:ct.name, artist:ct.artists?.[0]?.name||'?', year:ct.year||'?', wordCount:wc, img:ct.album?.images?.[0]?.url, skipped });
 }
 
 function nextTurn() {
   clearInterval(G.progTimer);
   G.progTimer = null;
   if (G.audio) { G.audio.pause(); G.audio=null; }
+  if (G_audioCtx && G_audioCtx.state === 'running') G_audioCtx.suspend();
+  // Add to history as skipped if nobody answered
+  addToHistory(true);
   G.turnNum++;
   G.currentGuess=null;
   // Mark current as played
@@ -1385,16 +1412,7 @@ function markCell(idx) {
   if (p.marked[idx]) return;
   if (p.card[idx]!==G.currentGuess.id) { showToast('Mauvaise case !'); return; }
   p.marked[idx]=G.currentGuess.id; p.score+=10;
-  // Add to history as correctly answered
-  const ht = G.gameTracks[G.currentTrackIdx];
-  if (ht && !G.history.find(h=>h.name===ht.name)) {
-    const hexp = ht.name.replace(/\([^)]*\)/g,'').replace(/\[[^\]]*\]/g,'').replace(/([a-zA-Z])'([a-zA-Z])/g,'$1 $2').replace(/[,\.!\?"]/g,' ').trim();
-    const hwc = hexp.split(/\s+/).filter(w=>w.length>0).length;
-    G.history.push({ name: ht.name, artist: ht.artists?.[0]?.name||'?', year: ht.year||'?', wordCount: hwc, img: ht.album?.images?.[0]?.url, skipped: false });
-  } else if (ht) {
-    const existing = G.history.find(h=>h.name===ht.name);
-    if (existing) existing.skipped = false;
-  }
+  addToHistory(false); // correctly answered
   // Remember which song was marked
   if (!p.markedSongs) p.markedSongs = {};
   const ct = G.gameTracks[G.currentTrackIdx];
