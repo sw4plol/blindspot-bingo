@@ -142,9 +142,9 @@ canvas#wcanvas{border-radius:50%;box-shadow:0 0 0 3px #1e1e2a,0 0 40px rgba(0,0,
 .bgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:3px;flex:1;min-height:0}
 .bcell{border-radius:8px;background:var(--card);border:2px solid var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;padding:2px;position:relative;overflow:hidden;user-select:none;min-height:0;min-width:0}
 .bcell:active{transform:scale(.9)}
-.bcell .ce{font-size:clamp(11px,3vw,15px);line-height:1}
-.bcell .cl{font-size:clamp(5px,1.1vw,7px);color:var(--muted);text-align:center;margin-top:1px;line-height:1.2}
-.bcell.marked::after{content:'✓';position:absolute;font-family:'Unbounded',sans-serif;font-size:clamp(18px,5.5vw,28px);color:rgba(0,0,0,.35);font-weight:900}
+.bcell .ce{font-size:clamp(11px,3vw,15px);line-height:1;pointer-events:none}
+.bcell .cl{font-size:clamp(5px,1.1vw,7px);color:var(--muted);text-align:center;margin-top:1px;line-height:1.2;pointer-events:none}
+.bcell.marked::after{content:'✓';position:absolute;font-family:'Unbounded',sans-serif;font-size:clamp(18px,5.5vw,28px);color:rgba(0,0,0,.35);font-weight:900;pointer-events:none}
 .bcell.bingo-line{animation:bpop .35s ease}
 @keyframes bpop{50%{transform:scale(1.12)}}
 .bcell.tap-me{box-shadow:0 0 0 3px currentColor}
