@@ -201,7 +201,7 @@ canvas#wcanvas{border-radius:50%;box-shadow:0 0 0 3px #1e1e2a,0 0 40px rgba(0,0,
     <button class="btn btn-ghost" onclick="goTo('leaderboard')">🏆 Classement</button>
     <button class="btn btn-ghost btn-sm" onclick="fullReset()" style="max-width:320px;opacity:.5">⟳ Réinitialiser</button>
   </div>
-  <div style="position:absolute;bottom:14px;left:16px;font-size:10px;color:rgba(255,255,255,.25);letter-spacing:1px;font-family:'DM Sans',sans-serif">v0.2034</div>
+  <div style="position:absolute;bottom:14px;left:16px;font-size:10px;color:rgba(255,255,255,.25);letter-spacing:1px;font-family:'DM Sans',sans-serif">v0.4500</div>
 </div>
 
 <!-- GENRE SELECT -->
@@ -1064,71 +1064,30 @@ function goToPlay() {
 }
 
 async function startPlayback() {
-  const track=G.gameTracks[G.currentTrackIdx];
+  const track = G.gameTracks[G.currentTrackIdx];
   if (!track?.preview_url) { showToast('Pas de preview pour cette chanson'); return; }
 
-  document.getElementById('play-start-btn').style.display='none';
-  document.getElementById('audio-ctrl').style.display='';
+  document.getElementById('play-start-btn').style.display = 'none';
+  document.getElementById('audio-ctrl').style.display = '';
 
-  if (G.audio) { G.audio.pause(); G.audio=null; }
+  if (G.audio) { G.audio.pause(); G.audio = null; }
 
   G.audio = new Audio(track.preview_url);
-  G.audio.crossOrigin = 'anonymous';
+  const volSlider = document.querySelector('input[type=range]');
+  G.audio.volume = volSlider ? volSlider.value / 100 : 0.8;
 
-  try {
-    // Keep one AudioContext alive
-    if (!G_audioCtx || G_audioCtx.state === 'closed') {
-      G_audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      G_gainNode = G_audioCtx.createGain();
-      const masterCompressor = G_audioCtx.createDynamicsCompressor();
-      // Aggressive normalization settings
-      masterCompressor.threshold.value = -18;
-      masterCompressor.knee.value = 6;
-      masterCompressor.ratio.value = 20;
-      masterCompressor.attack.value = 0.001;
-      masterCompressor.release.value = 0.1;
-      G_gainNode.connect(masterCompressor);
-      masterCompressor.connect(G_audioCtx.destination);
-    }
-    // Resume context BEFORE connecting source to avoid click/distortion
-    if (G_audioCtx.state === 'suspended') { G_audioCtx.resume(); }
-    await new Promise(r => setTimeout(r, 50)); // small delay to let context resume
+  G.audio.play().catch(e => showToast('Erreur audio : ' + e.message));
+  G.isPlaying = true;
+  document.getElementById('pp-btn').textContent = '⏸';
 
-    const source = G_audioCtx.createMediaElementSource(G.audio);
-
-    // Per-track gain normalization
-    const trackGain = G_audioCtx.createGain();
-    trackGain.gain.value = 1.4; // slight boost so quieter tracks feel full
-
-    source.connect(trackGain);
-    trackGain.connect(G_gainNode);
-
-    // Master volume from slider
-    const volSlider = document.querySelector('input[type=range]');
-    G_gainNode.gain.value = volSlider ? volSlider.value / 100 : 0.8;
-  } catch(e) {
-    G.audio.volume = 0.8;
-  }
-
-  // Resume context first to avoid distortion click
-  if (G_audioCtx && G_audioCtx.state === 'suspended') {
-    G_audioCtx.resume().then(() => {
-      G.audio.play().catch(e => showToast('Erreur audio : '+e.message));
-    });
-  } else {
-    G.audio.play().catch(e => showToast('Erreur audio : '+e.message));
-  }
-  G.isPlaying=true;
-  document.getElementById('pp-btn').textContent='⏸';
-
-  G.audio.addEventListener('ended', ()=>{
-    G.isPlaying=false;
-    document.getElementById('pp-btn').textContent='▶';
+  G.audio.addEventListener('ended', () => {
+    G.isPlaying = false;
+    document.getElementById('pp-btn').textContent = '▶';
     clearInterval(G.progTimer);
   });
 
   clearInterval(G.progTimer);
-  G.progTimer=setInterval(updateProgress,200);
+  G.progTimer = setInterval(updateProgress, 200);
 }
 
 function updateProgress() {
