@@ -236,11 +236,14 @@ canvas#wcanvas{border-radius:50%;box-shadow:0 0 0 3px #1e1e2a,0 0 40px rgba(0,0,
     </div>
 
     <div id="load-status" class="loading" style="display:none"><div class="spin-anim"></div><span id="load-msg">Chargement...</span></div>
-    <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 0">
-      <input type="checkbox" id="limit-artist-toggle" checked
-        style="width:18px;height:18px;accent-color:var(--g3);cursor:pointer;flex-shrink:0">
-      <span style="font-size:13px;color:var(--muted)">Limiter à 3 chansons par artiste <span style="color:var(--g3)">(plus de variété)</span></span>
-    </label>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <div class="flabel">Max chansons par artiste</div>
+      <div class="num-row">
+        <div class="num-btn" onclick="changeArtistLimit(-1)">−</div>
+        <div style="flex:1;text-align:center"><span class="num-val" id="artist-limit-val">3</span><span style="font-size:12px;color:var(--muted)"> par artiste</span></div>
+        <div class="num-btn" onclick="changeArtistLimit(1)">+</div>
+      </div>
+    </div>
     <button class="btn btn-fire" onclick="startGame()" style="margin-top:auto">▶ Demarrer</button>
   </div>
 </div>
@@ -526,6 +529,13 @@ function addPlayer() {
   inp.value = ''; renderPList();
 }
 function removePlayer(i) { G.players.splice(i,1); renderPList(); }
+function changeArtistLimit(d) {
+  const el = document.getElementById('artist-limit-val');
+  if (!el) return;
+  const cur = parseInt(el.textContent);
+  el.textContent = Math.max(1, Math.min(10, cur + d));
+}
+
 function changeCount(d) { G.trackCount = Math.max(5,Math.min(50,G.trackCount+d)); document.getElementById('track-count').textContent = G.trackCount; }
 
 // ═══════════════════════════════════════
@@ -603,7 +613,7 @@ async function startGame() {
         } catch(e) { console.warn('Playlist search failed:', q); }
       }
       playlistIds = shuffle(playlistIds);
-      const limitArtists = document.getElementById('limit-artist-toggle')?.checked !== false;
+      const maxPerArtist = parseInt(document.getElementById('artist-limit-val')?.textContent || '3');
       const usedArtists = new Map();
       for (const plId of playlistIds) {
         if (tracks.length >= 300) break;
@@ -617,7 +627,7 @@ async function startGame() {
               if (tracks.find(x=>x.id===t.id)) return;
               const an = t.artist?.name || '';
               const cnt = usedArtists.get(an) || 0;
-              if (limitArtists && cnt >= 3) return; // max 3 songs per artist
+              if (cnt >= maxPerArtist) return; // max N songs per artist
               usedArtists.set(an, cnt + 1);
               tracks.push(parseDeezerTrack(t));
             });
