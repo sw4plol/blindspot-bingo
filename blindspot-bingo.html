@@ -201,7 +201,7 @@ canvas#wcanvas{border-radius:50%;box-shadow:0 0 0 3px #1e1e2a,0 0 40px rgba(0,0,
     <button class="btn btn-ghost" onclick="goTo('leaderboard')">🏆 Classement</button>
     <button class="btn btn-ghost btn-sm" onclick="fullReset()" style="max-width:320px;opacity:.5">⟳ Réinitialiser</button>
   </div>
-  <div style="position:absolute;bottom:14px;left:16px;font-size:10px;color:rgba(255,255,255,.25);letter-spacing:1px;font-family:'DM Sans',sans-serif">v0.7652</div>
+  <div style="position:absolute;bottom:14px;left:16px;font-size:10px;color:rgba(255,255,255,.25);letter-spacing:1px;font-family:'DM Sans',sans-serif">v0.2366</div>
 </div>
 
 <!-- GENRE SELECT -->
@@ -350,7 +350,7 @@ canvas#wcanvas{border-radius:50%;box-shadow:0 0 0 3px #1e1e2a,0 0 40px rgba(0,0,
 <!-- BINGO CARD -->
 <div id="bingo-card" class="screen">
   <div class="topbar" style="padding-bottom:0">
-    <div class="back" onclick="goTo('player-select')">←</div>
+    <div class="back" onclick="stopAndGoTo('player-select')">←</div>
     <div class="ptitle" id="bc-title"></div>
     <div class="bc-pts" id="bc-pts">0 pts</div>
   </div>
@@ -362,7 +362,7 @@ canvas#wcanvas{border-radius:50%;box-shadow:0 0 0 3px #1e1e2a,0 0 40px rgba(0,0,
     <div class="bgrid" id="bgrid"></div>
 
     <div class="bc-actions">
-      <button class="btn btn-ghost btn-sm" style="flex:1" onclick="goTo('player-select')">← Joueurs</button>
+      <button class="btn btn-ghost btn-sm" style="flex:1" onclick="stopAndGoTo('player-select')">← Joueurs</button>
 
     </div>
   </div>
@@ -375,7 +375,7 @@ canvas#wcanvas{border-radius:50%;box-shadow:0 0 0 3px #1e1e2a,0 0 40px rgba(0,0,
     <div class="win-big">BINGO!</div>
     <div class="win-who" id="win-who"></div>
     <div class="win-sub" id="win-sub"></div>
-    <button class="btn btn-fire" onclick="goTo('player-select')" style="max-width:290px">🎲 Continuer</button>
+    <button class="btn btn-fire" onclick="stopAndGoTo('player-select')" style="max-width:290px">🎲 Continuer</button>
     <button class="btn btn-ghost" onclick="newGame()" style="max-width:290px">🔄 Nouvelle partie</button>
   </div>
 </div>
@@ -830,7 +830,7 @@ async function startGame() {
     G.gameTracks = shuffle([...tracks]); // Keep ALL tracks, always shuffled
     G.playedIds = new Set(); // Track played songs to avoid repeats
     G.currentTrackIdx = 0; G.turnNum = 1; G.currentGuess = null; G.history = [];
-    G.players.forEach(p => { p.card=genCard(); p.marked=new Array(25).fill(null); p.score=0; p.bingos=0; });
+    G.players.forEach(p => { p.card=genCard(); p.marked=new Array(25).fill(null); p.markedSongs={}; p.score=0; p.bingos=0; });
 
     ls.style.display = 'none';
     goTo('spin-screen');
@@ -993,6 +993,17 @@ function getAudioCtx() {
 function stopAndGoTo(s) {
   if (G.audio) { G.audio.pause(); G.audio=null; }
   clearInterval(G.progTimer); G.progTimer=null; G.isPlaying=false;
+  goTo(s);
+}
+
+function pauseAndGoTo(s) {
+  // Pause audio but keep it alive so it can resume if they come back
+  if (G.audio && G.isPlaying) {
+    G.audio.pause();
+    G.isPlaying=false;
+    clearInterval(G.progTimer);
+    document.getElementById('pp-btn').textContent='▶';
+  }
   goTo(s);
 }
 
