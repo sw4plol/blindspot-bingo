@@ -201,7 +201,7 @@ canvas#wcanvas{border-radius:50%;box-shadow:0 0 0 3px #1e1e2a,0 0 40px rgba(0,0,
     <button class="btn btn-ghost" onclick="goTo('leaderboard')">🏆 Classement</button>
     <button class="btn btn-ghost btn-sm" onclick="fullReset()" style="max-width:320px;opacity:.5">⟳ Réinitialiser</button>
   </div>
-  <div style="position:absolute;bottom:14px;left:16px;font-size:10px;color:rgba(255,255,255,.25);letter-spacing:1px;font-family:'DM Sans',sans-serif">v0.4386</div>
+  <div style="position:absolute;bottom:14px;left:16px;font-size:10px;color:rgba(255,255,255,.25);letter-spacing:1px;font-family:'DM Sans',sans-serif">v0.2769</div>
 </div>
 
 <!-- GENRE SELECT -->
@@ -584,6 +584,10 @@ function initSetup() {
     const badge = document.getElementById('setup-genre-badge');
     badge.style.cssText = `background:${g.bg};border-color:${g.color};color:${g.color};display:inline-flex;align-items:center;gap:8px;padding:9px 14px;border-radius:12px;border:2px solid;font-size:13px;font-weight:600;width:fit-content`;
     badge.textContent = g.emoji + ' ' + g.label;
+    if (g.isArtist && g.artistList && g.artistList.length > 2) {
+      badge.title = g.artistList.join(', ');
+      badge.style.cursor = 'help';
+    }
     document.getElementById('add-btn-el').style.background = g.color;
     document.querySelectorAll('.num-btn').forEach(el => { el.style.borderColor = g.color; el.style.color = g.color; });
     document.querySelectorAll('.num-val').forEach(el => { el.style.color = g.color; });
