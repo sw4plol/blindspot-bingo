@@ -236,6 +236,11 @@ canvas#wcanvas{border-radius:50%;box-shadow:0 0 0 3px #1e1e2a,0 0 40px rgba(0,0,
     </div>
 
     <div id="load-status" class="loading" style="display:none"><div class="spin-anim"></div><span id="load-msg">Chargement...</span></div>
+    <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 0">
+      <input type="checkbox" id="limit-artist-toggle" checked
+        style="width:18px;height:18px;accent-color:var(--g3);cursor:pointer;flex-shrink:0">
+      <span style="font-size:13px;color:var(--muted)">Limiter à 3 chansons par artiste <span style="color:var(--g3)">(plus de variété)</span></span>
+    </label>
     <button class="btn btn-fire" onclick="startGame()" style="margin-top:auto">▶ Demarrer</button>
   </div>
 </div>
@@ -598,6 +603,7 @@ async function startGame() {
         } catch(e) { console.warn('Playlist search failed:', q); }
       }
       playlistIds = shuffle(playlistIds);
+      const limitArtists = document.getElementById('limit-artist-toggle')?.checked !== false;
       const usedArtists = new Map();
       for (const plId of playlistIds) {
         if (tracks.length >= 300) break;
@@ -611,7 +617,7 @@ async function startGame() {
               if (tracks.find(x=>x.id===t.id)) return;
               const an = t.artist?.name || '';
               const cnt = usedArtists.get(an) || 0;
-              if (cnt >= 3) return; // max 3 songs per artist
+              if (limitArtists && cnt >= 3) return; // max 3 songs per artist
               usedArtists.set(an, cnt + 1);
               tracks.push(parseDeezerTrack(t));
             });
