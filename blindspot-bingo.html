@@ -32,7 +32,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 .flabel{font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--muted)}
 
 /* HOME */
-#home{background:var(--bg)}
+#home{background:var(--bg);position:relative}
 .home-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
   gap:20px;padding:24px 20px;text-align:center;
   background:radial-gradient(ellipse at 50% -10%,#1c0a12 0%,var(--bg) 58%)}
@@ -201,6 +201,7 @@ canvas#wcanvas{border-radius:50%;box-shadow:0 0 0 3px #1e1e2a,0 0 40px rgba(0,0,
     <button class="btn btn-ghost" onclick="goTo('leaderboard')">🏆 Classement</button>
     <button class="btn btn-ghost btn-sm" onclick="fullReset()" style="max-width:320px;opacity:.5">⟳ Réinitialiser</button>
   </div>
+  <div style="position:absolute;bottom:14px;left:16px;font-size:10px;color:rgba(255,255,255,.25);letter-spacing:1px;font-family:'DM Sans',sans-serif">v0.1047</div>
 </div>
 
 <!-- GENRE SELECT -->
@@ -427,17 +428,17 @@ canvas#wcanvas{border-radius:50%;box-shadow:0 0 0 3px #1e1e2a,0 0 40px rgba(0,0,
 // ═══════════════════════════════════════
 const GENRES = [
   { id:'rock', label:'Rock', emoji:'🎸', color:'#e84393', bg:'rgba(232,67,147,.15)', desc:"Classic rock, indie, alternatif",
-    playlistIds:[1306931615,1728093421,1405240385,8027597282,8074584322,761604441,3126664682,1578812305,2905701862,8621268482],
-    plQueries:['rock essentials','classic rock','rock hits','rock anthems'] },
+    playlistIds:[1306931615,1728093421,1405240385,8027597282,8074584322,761604441,3126664682,1578812305,2905701862,8621268482,1419215845,5714797982,8062328742,1306978785,9478727382],
+    plQueries:['rock essentials','classic rock anthems','rock legends','hard rock essentials','alternative rock hits'] },
   { id:'summer', label:'Summer Pop', emoji:'☀️', color:'#ffd600', bg:'rgba(255,214,0,.15)', desc:"Pop estivale et bangers",
-    playlistIds:[1313621735,1282519205,1350539655,1279166445,1080599701,1109890601,1279341775,1880700281,2098367324,1968370761],
-    plQueries:['summer pop hits','summer hits pop','pop summer','beach pop hits'] },
+    playlistIds:[],
+    plQueries:['summer pop hits 2010','summer hits pop radio','top summer pop','summer party pop hits','pop hits ete'] },
   { id:'qc', label:'Quebec Hits', emoji:'🎉', color:'#ff6b35', bg:'rgba(255,107,53,.15)', desc:"Les meilleurs hits du Quebec",
     playlistIds:[],
     plQueries:['hits quebecois','chanson quebecoise','pop rock quebec','musique quebecoise','francophone hits quebec','artistes quebecois pop'] },
   { id:'rap', label:'Rap Music', emoji:'🎤', color:'#00d4ff', bg:'rgba(0,212,255,.15)', desc:"Hip-hop, rap, trap",
-    playlistIds:[1282524575,1282494785,1313624395,1279120965,1869490941,2075887604,4523543962,6721424184,7065463824,8053032162],
-    plQueries:['rap hits','hip hop hits','trap hits','rap mainstream'] },
+    playlistIds:[1282524575,1282494785,1279120965,4523543962,6721424184],
+    plQueries:['rap hits mainstream','hip hop top hits','trap banger hits 2020','rap us hits charts','hip hop hits radio'] },
 ];
 
 let GUESSES = [
@@ -866,17 +867,21 @@ function drawWheel(rot) {
   ctx.fillStyle='#09090b'; ctx.fill(); ctx.strokeStyle='#1e1e2a'; ctx.lineWidth=3; ctx.stroke();
 }
 
+let G_clickCtx = null;
 function playClick(vol=0.08) {
   try {
-    const ac = new (window.AudioContext||window.webkitAudioContext)();
-    const buf = ac.createBuffer(1,512,ac.sampleRate);
+    if (!G_clickCtx || G_clickCtx.state === 'closed') {
+      G_clickCtx = new (window.AudioContext||window.webkitAudioContext)();
+    }
+    if (G_clickCtx.state === 'suspended') G_clickCtx.resume();
+    const buf = G_clickCtx.createBuffer(1,512,G_clickCtx.sampleRate);
     const d = buf.getChannelData(0);
     for(let i=0;i<512;i++) d[i]=(Math.random()*2-1)*Math.exp(-i/80);
-    const src = ac.createBufferSource();
+    const src = G_clickCtx.createBufferSource();
     src.buffer = buf;
-    const g = ac.createGain(); g.gain.value = vol;
-    src.connect(g); g.connect(ac.destination);
-    src.start(); src.stop(ac.currentTime+0.05);
+    const g = G_clickCtx.createGain(); g.gain.value = vol;
+    src.connect(g); g.connect(G_clickCtx.destination);
+    src.start(); src.stop(G_clickCtx.currentTime+0.05);
   } catch(e) {}
 }
 
