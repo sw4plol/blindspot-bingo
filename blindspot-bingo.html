@@ -807,9 +807,12 @@ function revealTrack() {
    const artist=t.artists?.map(a=>a.name).join(", ")||"?";
    const img=t.album?.images?.[0]?.url;
    const year=t.year||t.album?.release_date?.substring(0,4)||"?";
+   // Remove anything in parentheses/brackets first, then split contractions
    const expandedTitle = t.name
-     .replace(/[\(\)\[\]\{\}"\,\.\!\?]/g," ")
-     .replace(/([a-zA-Z])\'([a-zA-Z])/g, '$1 $2')
+     .replace(/\([^)]*\)/g,'')      // remove (2013 Remaster) etc.
+     .replace(/\[[^\]]*\]/g,'')    // remove [stuff] too
+     .replace(/([a-zA-Z])\'([a-zA-Z])/g, '$1 $2')  // don't -> don t
+     .replace(/[\,\.\!\?\"]/g,' ')
      .trim();
    const wordCount = expandedTitle.split(/\s+/).filter(w=>w.length>0).length;
    document.getElementById("rev-content").innerHTML=
