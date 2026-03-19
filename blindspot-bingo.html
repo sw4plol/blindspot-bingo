@@ -319,9 +319,13 @@ canvas#wcanvas{border-radius:50%;box-shadow:0 0 0 3px #1e1e2a,0 0 40px rgba(0,0,
 
     <div class="play-actions">
       <button class="btn btn-ghost btn-sm" style="flex:1" onclick="goTo('spin-screen')">← Retour</button>
-      <button class="btn btn-fire btn-sm" style="flex:1.4" onclick="goTo('player-select')">✅ Repondre →</button>
+      <button class="btn btn-fire btn-sm" style="flex:1.4" onclick="goTo('player-select')">✅ Répondre →</button>
     </div>
-    <button class="btn btn-ghost btn-sm" style="max-width:300px;opacity:.55" onclick="revealTrack()">👁 Reveler la chanson</button>
+    <div class="play-actions">
+      <button class="btn btn-ghost btn-sm" style="flex:1;opacity:.7" onclick="skipTrack()">⏭ Je connais pas</button>
+      <button class="btn btn-ghost btn-sm" style="flex:1;opacity:.7" onclick="showHistory()">📋 Historique</button>
+    </div>
+    <button class="btn btn-ghost btn-sm" style="max-width:300px;opacity:.55" onclick="revealTrack()">👁 Révéler la chanson</button>
   </div>
 </div>
 
@@ -449,6 +453,7 @@ let G = {
   gameTracks: [],
   currentTrackIdx: 0,
   playedIds: new Set(),
+  history: [], // {name, artist, year, wordCount}
   currentGuess: null,
   players: [],
   currentPlayer: null,
@@ -858,6 +863,20 @@ function drawWheel(rot) {
   ctx.fillStyle='#09090b'; ctx.fill(); ctx.strokeStyle='#1e1e2a'; ctx.lineWidth=3; ctx.stroke();
 }
 
+function playClick(vol=0.08) {
+  try {
+    const ac = new (window.AudioContext||window.webkitAudioContext)();
+    const buf = ac.createBuffer(1,512,ac.sampleRate);
+    const d = buf.getChannelData(0);
+    for(let i=0;i<512;i++) d[i]=(Math.random()*2-1)*Math.exp(-i/80);
+    const src = ac.createBufferSource();
+    src.buffer = buf;
+    const g = ac.createGain(); g.gain.value = vol;
+    src.connect(g); g.connect(ac.destination);
+    src.start(); src.stop(ac.currentTime+0.05);
+  } catch(e) {}
+}
+
 function doSpin() {
   if (spinning) return;
   spinning = true;
@@ -868,10 +887,15 @@ function doSpin() {
   const target=wAngle+extra, dur=2800+Math.random()*1200;
   const t0=performance.now(), a0=wAngle;
   const ease=t=>1-Math.pow(1-t,4);
+  let lastSeg=-1;
   function frame(now) {
     const p=Math.min((now-t0)/dur,1);
     wAngle=a0+(target-a0)*ease(p);
     drawWheel(wAngle);
+    // Click sound as wheel passes each segment
+    const sl2=Math.PI*2/GUESSES.length;
+    const seg=Math.floor(((wAngle%(Math.PI*2))/(Math.PI*2))*GUESSES.length);
+    if(seg!==lastSeg){ const speed=1-p; if(speed>0.05) playClick(0.04+speed*0.06); lastSeg=seg; }
     if(p<1) requestAnimationFrame(frame);
     else { wAngle%=Math.PI*2; spinning=false; onSpinEnd(); }
   }
@@ -1056,7 +1080,14 @@ function revealTrack() {
        `<div style="color:#ff4560;font-size:12px;font-weight:600;background:var(--surf);padding:4px 10px;border-radius:20px">🔢 ${wordCount} mot${wordCount>1?"s":""}</div>` +
      `</div>` +
      `<div style="font-size:10px;color:var(--muted);margin-top:4px">⚠️ Année selon Deezer (peut être une réédition)</div>`;
-   document.getElementById("rev-overlay").classList.add("show");
+   // Add to history
+  const t2 = G.gameTracks[G.currentTrackIdx];
+  if (t2 && !G.history.find(h=>h.name===t2.name)) {
+    const expanded2 = t2.name.replace(/\([^)]*\)/g,'').replace(/\[[^\]]*\]/g,'').replace(/([a-zA-Z])'([a-zA-Z])/g,'$1 $2').replace(/[,\.!\?"]/g,' ').trim();
+    const wc2 = expanded2.split(/\s+/).filter(w=>w.length>0).length;
+    G.history.push({ name: t2.name, artist: t2.artists?.[0]?.name||'?', year: t2.year||'?', wordCount: wc2, img: t2.album?.images?.[0]?.url, skipped: false });
+  }
+  document.getElementById("rev-overlay").classList.add("show");
 
 }
 function closeReveal(){ document.getElementById('rev-overlay').classList.remove('show'); }
@@ -1081,6 +1112,19 @@ function renderPS() {
     btn.onclick=()=>{ G.currentPlayer=i; goTo('bingo-card'); };
     grid.appendChild(btn);
   });
+}
+
+function skipTrack() {
+  // Save to history as skipped
+  const t = G.gameTracks[G.currentTrackIdx];
+  if (t) {
+    const artist = t.artists?.[0]?.name || '?';
+    const year = t.year || '?';
+    const expanded = t.name.replace(/\([^)]*\)/g,'').replace(/\[[^\]]*\]/g,'').replace(/([a-zA-Z])'([a-zA-Z])/g,'$1 $2').replace(/[,\.!\?"]/g,' ').trim();
+    const wc = expanded.split(/\s+/).filter(w=>w.length>0).length;
+    G.history.push({ name: t.name, artist, year, wordCount: wc, img: t.album?.images?.[0]?.url, skipped: true });
+  }
+  nextTurn();
 }
 
 function nextTurn() {
@@ -1181,8 +1225,11 @@ function renderCard() {
       div.style.boxShadow='0 0 0 1px '+mc.color+' inset';
       div.classList.add('marked');
       if (winCells.has(i)) div.classList.add('bingo-line');
-      div.innerHTML=`<div class="ce">${mc.emoji}</div><div class="cl" style="color:${mc.color}">${mc.label.split('/')[0]}</div>`;
-      // Single click/tap to unmark
+      // Show song info on marked cell
+      const markedTrack = G.history.find ? G.history[Math.max(0,G.history.length-1-(G.turnNum-2))] : null;
+      const songHint = p.markedSongs?.[i] ? `\n🎵 ${p.markedSongs[i]}` : '';
+      div.title = mc.label + songHint;
+      div.innerHTML=`<div class="ce" style="pointer-events:none">${mc.emoji}</div><div class="cl" style="color:${mc.color};pointer-events:none">${mc.label.split('/')[0]}</div>`;
       div.style.cursor='pointer';
       div.onclick=()=>unmarkCell(i);
     } else if (isCurrentCat) {
@@ -1223,6 +1270,10 @@ function markCell(idx) {
   if (p.marked[idx]) return;
   if (p.card[idx]!==G.currentGuess.id) { showToast('Mauvaise case !'); return; }
   p.marked[idx]=G.currentGuess.id; p.score+=10;
+  // Remember which song was marked
+  if (!p.markedSongs) p.markedSongs = {};
+  const ct = G.gameTracks[G.currentTrackIdx];
+  if (ct) p.markedSongs[idx] = ct.name + ' — ' + (ct.artists?.[0]?.name||'?');
   const prevB=p.bingos; checkBingo(p); renderCard();
   if (p.bingos>prevB) {
     const g=G.selectedGenre;
