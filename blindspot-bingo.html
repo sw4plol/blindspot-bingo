@@ -550,6 +550,9 @@ function goTo(s) {
   if (['home','genre-select'].includes(s)) {
     if (G.audio) { G.audio.pause(); G.audio=null; }
     clearInterval(G.progTimer); G.progTimer=null; G.isPlaying=false;
+  }
+  if (s === 'player-select' || s === 'bingo-card' || s === 'leaderboard') {
+    if (G.audio && G.isPlaying) { G.audio.pause(); G.isPlaying=false; }
     resetCustomWheel();
     // Reset custom wheel UI
     const tog = document.getElementById('custom-wheel-toggle');
@@ -877,6 +880,7 @@ function playClick(vol=0.08) {
   } catch(e) {}
 }
 
+let lastSeg=-1;
 function doSpin() {
   if (spinning) return;
   spinning = true;
@@ -887,7 +891,7 @@ function doSpin() {
   const target=wAngle+extra, dur=2800+Math.random()*1200;
   const t0=performance.now(), a0=wAngle;
   const ease=t=>1-Math.pow(1-t,4);
-  let lastSeg=-1;
+  lastSeg=-1;
   function frame(now) {
     const p=Math.min((now-t0)/dur,1);
     wAngle=a0+(target-a0)*ease(p);
