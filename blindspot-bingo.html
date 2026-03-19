@@ -201,7 +201,7 @@ canvas#wcanvas{border-radius:50%;box-shadow:0 0 0 3px #1e1e2a,0 0 40px rgba(0,0,
     <button class="btn btn-ghost" onclick="goTo('leaderboard')">🏆 Classement</button>
     <button class="btn btn-ghost btn-sm" onclick="fullReset()" style="max-width:320px;opacity:.5">⟳ Réinitialiser</button>
   </div>
-  <div style="position:absolute;bottom:14px;left:16px;font-size:10px;color:rgba(255,255,255,.25);letter-spacing:1px;font-family:'DM Sans',sans-serif">v0.9079</div>
+  <div style="position:absolute;bottom:14px;left:16px;font-size:10px;color:rgba(255,255,255,.25);letter-spacing:1px;font-family:'DM Sans',sans-serif">v0.4386</div>
 </div>
 
 <!-- GENRE SELECT -->
@@ -757,39 +757,67 @@ async function startGame() {
     let tracks = [];
 
     if (g.isArtist && g.artistList && g.artistList.length > 0) {
-      // ARTIST MODE - songs from one or multiple artists
+      // ARTIST MODE - weighted random by number of artists
+      // Each artist gets equal probability = 1/N songs per slot
       const artists = g.artistList;
+      const tracksPerArtist = {};
+
+      // Load tracks for each artist
       for (const artistName of artists) {
         msg.textContent = 'Recherche de ' + artistName + '...';
+        tracksPerArtist[artistName] = [];
         try {
           const artistData = await deezerGet('search/artist?q=' + encodeURIComponent(artistName) + '&limit=1');
           if (artistData?.data?.[0]) {
             const artistId = artistData.data[0].id;
-            msg.textContent = 'Chargement: ' + artistName + '...';
             // Top tracks
             const topData = await deezerGet('artist/' + artistId + '/top?limit=50');
             if (topData?.data) topData.data.forEach(t => {
-              if (t?.id && t.preview && t.title && !isLiveTrack(t.title) && !tracks.find(x=>x.id===t.id))
-                tracks.push(parseDeezerTrack(t));
+              if (t?.id && t.preview && t.title && !isLiveTrack(t.title))
+                tracksPerArtist[artistName].push(parseDeezerTrack(t));
             });
             // Albums for more variety
             const albumData = await deezerGet('artist/' + artistId + '/albums?limit=15');
             if (albumData?.data) {
-              for (const album of shuffle([...albumData.data]).slice(0,6)) {
-                if (tracks.length >= 200) break;
+              for (const album of shuffle([...albumData.data]).slice(0, 6)) {
                 try {
                   const td = await deezerGet('album/' + album.id + '/tracks');
                   if (td?.data) td.data.forEach(t => {
-                    if (t?.id && t.preview && t.title && !isLiveTrack(t.title) && !tracks.find(x=>x.id===t.id))
-                      tracks.push(parseDeezerTrack(t));
+                    if (t?.id && t.preview && t.title && !isLiveTrack(t.title) && !tracksPerArtist[artistName].find(x=>x.id===t.id))
+                      tracksPerArtist[artistName].push(parseDeezerTrack(t));
                   });
                 } catch(e) {}
               }
             }
+            // Shuffle each artist's tracks
+            tracksPerArtist[artistName] = shuffle(tracksPerArtist[artistName]);
           }
-        } catch(e) { console.warn('Artist search failed:', artistName, e); }
+        } catch(e) { console.warn('Artist failed:', artistName, e); }
       }
-    } else {
+
+      // Build final tracklist with equal probability per artist
+      // Interleave: pick 1 from each artist in round-robin until we have enough
+      const n = artists.length;
+      const maxPerArtist = Math.ceil(300 / n);
+      const pointers = {};
+      artists.forEach(a => pointers[a] = 0);
+
+      let added = 0;
+      while (added < 300) {
+        let anyAdded = false;
+        for (const artistName of shuffle([...artists])) {
+          const pool = tracksPerArtist[artistName] || [];
+          const ptr = pointers[artistName];
+          if (ptr < pool.length) {
+            const t = pool[ptr];
+            if (!tracks.find(x=>x.id===t.id)) tracks.push(t);
+            pointers[artistName]++;
+            added++;
+            anyAdded = true;
+          }
+        }
+        if (!anyAdded) break; // all artists exhausted
+      } } else {
       // GENRE/PLAYLIST MODE
       msg.textContent = 'Recherche de playlists...';
       let playlistIds = [];
