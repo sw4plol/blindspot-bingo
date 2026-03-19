@@ -426,14 +426,18 @@ canvas#wcanvas{border-radius:50%;box-shadow:0 0 0 3px #1e1e2a,0 0 40px rgba(0,0,
 // CONSTANTS
 // ═══════════════════════════════════════
 const GENRES = [
-  { id:'rock',   label:'Rock',        emoji:'🎸', color:'#e84393', bg:'rgba(232,67,147,.15)', desc:"Classic rock, indie, alternatif",
-    plQueries:['rock classique','classic rock hits','rock 90s','rock 2000s','hard rock','alternative rock','rock indie hits','grunge hits','rock legends','rock radio'] },
-  { id:'summer', label:'Summer Pop',  emoji:'☀️', color:'#ffd600', bg:'rgba(255,214,0,.15)', desc:"Pop estivale et bangers",
-    plQueries:['summer pop hits','hits ete','pop radio summer','summer anthem','beach hits','summer party hits','pop summer 2010','top summer hits','summer 2015','summer vibes'] },
-  { id:'qc',     label:'Quebec Hits', emoji:'🎉', color:'#ff6b35', bg:'rgba(255,107,53,.15)', desc:"Les meilleurs hits du Quebec",
-    plQueries:['hits quebecois','chanson quebecoise','pop quebec','rock quebecois','francophone quebec','artistes quebecois','hits canada francais','musique quebec'] },
-  { id:'rap',    label:'Rap Music',   emoji:'🎤', color:'#00d4ff', bg:'rgba(0,212,255,.15)', desc:"Hip-hop, rap, trap",
-    plQueries:['rap francais hits','hip hop hits','rap 2020','trap music hits','rap us hits','rap classique hits','hip hop 2010','rap mainstream hits','urban hits','rap top charts'] },
+  { id:'rock', label:'Rock', emoji:'🎸', color:'#e84393', bg:'rgba(232,67,147,.15)', desc:"Classic rock, indie, alternatif",
+    playlistIds:[1306931615,1728093421,1405240385,8027597282,8074584322,761604441,3126664682,1578812305,2905701862,8621268482],
+    plQueries:['rock essentials','classic rock','rock hits','rock anthems'] },
+  { id:'summer', label:'Summer Pop', emoji:'☀️', color:'#ffd600', bg:'rgba(255,214,0,.15)', desc:"Pop estivale et bangers",
+    playlistIds:[1313621735,1282519205,1350539655,1279166445,1080599701,1109890601,1279341775,1880700281,2098367324,1968370761],
+    plQueries:['summer pop hits','summer hits pop','pop summer','beach pop hits'] },
+  { id:'qc', label:'Quebec Hits', emoji:'🎉', color:'#ff6b35', bg:'rgba(255,107,53,.15)', desc:"Les meilleurs hits du Quebec",
+    playlistIds:[],
+    plQueries:['hits quebecois','chanson quebecoise','pop rock quebec','musique quebecoise','francophone hits quebec','artistes quebecois pop'] },
+  { id:'rap', label:'Rap Music', emoji:'🎤', color:'#00d4ff', bg:'rgba(0,212,255,.15)', desc:"Hip-hop, rap, trap",
+    playlistIds:[1282524575,1282494785,1313624395,1279120965,1869490941,2075887604,4523543962,6721424184,7065463824,8053032162],
+    plQueries:['rap hits','hip hop hits','trap hits','rap mainstream'] },
 ];
 
 let GUESSES = [
