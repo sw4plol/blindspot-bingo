@@ -201,7 +201,7 @@ canvas#wcanvas{border-radius:50%;box-shadow:0 0 0 3px #1e1e2a,0 0 40px rgba(0,0,
     <button class="btn btn-ghost" onclick="goTo('leaderboard')">🏆 Classement</button>
     <button class="btn btn-ghost btn-sm" onclick="fullReset()" style="max-width:320px;opacity:.5">⟳ Réinitialiser</button>
   </div>
-  <div style="position:absolute;bottom:14px;left:16px;font-size:10px;color:rgba(255,255,255,.25);letter-spacing:1px;font-family:'DM Sans',sans-serif">v0.2769</div>
+  <div style="position:absolute;bottom:14px;left:16px;font-size:10px;color:rgba(255,255,255,.25);letter-spacing:1px;font-family:'DM Sans',sans-serif">v0.2426</div>
 </div>
 
 <!-- GENRE SELECT -->
@@ -885,7 +885,16 @@ function initSpin() {
   const banner = document.getElementById('spin-genre-banner');
   if (g) {
     banner.style.cssText = `background:${g.bg};border-color:${g.color};color:${g.color};display:flex;align-items:center;gap:8px;padding:8px 14px;border-radius:12px;border:2px solid;font-size:13px;font-weight:600`;
-    banner.textContent = g.emoji + ' ' + g.label;
+    // Truncate long labels (multi-artist) and show tooltip
+    const fullLabel = g.emoji + ' ' + (g.isArtist && g.artistList ? g.artistList.join(', ') : g.label);
+    const shortLabel = g.label.length > 30 ? g.label.substring(0, 28) + '...' : g.label;
+    banner.textContent = g.emoji + ' ' + shortLabel;
+    banner.title = fullLabel;
+    banner.style.cursor = g.label.length > 30 ? 'help' : '';
+    banner.style.maxWidth = 'min(88vw, 340px)';
+    banner.style.overflow = 'hidden';
+    banner.style.textOverflow = 'ellipsis';
+    banner.style.whiteSpace = 'nowrap';
     document.getElementById('spin-btn').style.background = `linear-gradient(130deg,${g.color},${g.color}99)`;
   }
   drawWheel(wAngle);
