@@ -571,6 +571,20 @@ function initSetup() {
     badge.style.cssText = `background:${g.bg};border-color:${g.color};color:${g.color};display:inline-flex;align-items:center;gap:8px;padding:9px 14px;border-radius:12px;border:2px solid;font-size:13px;font-weight:600;width:fit-content`;
     badge.textContent = g.emoji + ' ' + g.label;
     document.getElementById('add-btn-el').style.background = g.color;
+    document.querySelectorAll('.num-btn').forEach(el => { el.style.borderColor = g.color; el.style.color = g.color; });
+    document.querySelectorAll('.num-val').forEach(el => { el.style.color = g.color; });
+    document.querySelector('.btn-fire') && (document.querySelector('.btn-fire').style.background = `linear-gradient(130deg,${g.color},${g.color}99)`);
+    document.documentElement.style.setProperty('--genre-color', g.color);
+  }
+  // Always reset artist limit UI — only disable if genre is artist mode
+  const row = document.getElementById('artist-limit-row');
+  const label = document.getElementById('artist-limit-label');
+  if (row && label) {
+    const isArtist = g?.isArtist || false;
+    row.style.opacity = isArtist ? '0.3' : '1';
+    row.style.pointerEvents = isArtist ? 'none' : '';
+    label.style.opacity = isArtist ? '0.3' : '1';
+    label.textContent = isArtist ? 'Max chansons par artiste (non applicable)' : 'Max chansons par artiste';
   }
   renderPList();
 }
