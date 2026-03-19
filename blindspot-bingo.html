@@ -933,31 +933,40 @@ function startPlayback() {
   document.getElementById('audio-ctrl').style.display='';
 
   if (G.audio) { G.audio.pause(); G.audio=null; }
-  if (G_audioCtx) { G_audioCtx.close(); G_audioCtx=null; G_gainNode=null; }
 
   G.audio = new Audio(track.preview_url);
   G.audio.crossOrigin = 'anonymous';
 
   try {
-    // Web Audio API for normalization
-    const { ctx, gain } = getAudioCtx();
-    const source = ctx.createMediaElementSource(G.audio);
+    // Keep one AudioContext alive — recreating it causes issues on mobile
+    if (!G_audioCtx || G_audioCtx.state === 'closed') {
+      G_audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      G_gainNode = G_audioCtx.createGain();
+      const masterCompressor = G_audioCtx.createDynamicsCompressor();
+      // Aggressive normalization settings
+      masterCompressor.threshold.value = -18;
+      masterCompressor.knee.value = 6;
+      masterCompressor.ratio.value = 20;
+      masterCompressor.attack.value = 0.001;
+      masterCompressor.release.value = 0.1;
+      G_gainNode.connect(masterCompressor);
+      masterCompressor.connect(G_audioCtx.destination);
+    }
+    if (G_audioCtx.state === 'suspended') G_audioCtx.resume();
 
-    // DynamicsCompressor smooths out volume differences between tracks
-    const compressor = ctx.createDynamicsCompressor();
-    compressor.threshold.value = -24;
-    compressor.knee.value = 30;
-    compressor.ratio.value = 12;
-    compressor.attack.value = 0.003;
-    compressor.release.value = 0.25;
+    const source = G_audioCtx.createMediaElementSource(G.audio);
 
-    source.connect(compressor);
-    compressor.connect(gain);
-    // Master volume controlled by slider
+    // Per-track gain normalization
+    const trackGain = G_audioCtx.createGain();
+    trackGain.gain.value = 1.4; // slight boost so quieter tracks feel full
+
+    source.connect(trackGain);
+    trackGain.connect(G_gainNode);
+
+    // Master volume from slider
     const volSlider = document.querySelector('input[type=range]');
-    gain.gain.value = volSlider ? volSlider.value / 100 : 0.8;
+    G_gainNode.gain.value = volSlider ? volSlider.value / 100 : 0.8;
   } catch(e) {
-    // Fallback to normal audio if Web Audio fails
     G.audio.volume = 0.8;
   }
 
