@@ -610,19 +610,55 @@ function toggleCustomWheel() {
   if (on) buildCustomWheelFields();
 }
 
+const WHEEL_EMOJIS = ['🎵','🎤','🎸','🥁','🎹','🎺','🎻','🎧','🎼','🎙️','🏆','🍺','🎲','⭐','🔥','💀','👑','🎯','💎','🚀','❓','⚡','🌈','🎭','🕺','💃','🎊','🤘','👻','🎮'];
+
 function buildCustomWheelFields() {
   const container = document.getElementById('custom-wheel-fields');
-  if (container.children.length > 0) return; // already built
+  if (container.children.length > 0) return;
   GUESSES.forEach((g, i) => {
     const row = document.createElement('div');
-    row.style.cssText = 'display:flex;align-items:center;gap:8px';
-    row.innerHTML = `<span style="font-size:16px;width:24px;text-align:center">${g.emoji}</span>
-      <input type="text" value="${g.label}" maxlength="24"
-        style="flex:1;background:var(--surf);border:1.5px solid ${g.color}60;border-radius:10px;
-        padding:10px 12px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;outline:none"
-        oninput="updateCustomGuess(${i}, this.value)">`;
+    row.style.cssText = 'display:flex;flex-direction:column;gap:4px';
+    row.innerHTML = `
+      <div style="display:flex;align-items:center;gap:8px">
+        <button onclick="openEmojiPicker(${i})" id="emoji-btn-${i}"
+          style="font-size:20px;width:40px;height:40px;border-radius:10px;border:1.5px solid ${g.color}60;
+          background:var(--surf);cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center">
+          ${g.emoji}
+        </button>
+        <input type="text" id="custom-label-${i}" value="${g.label}" maxlength="24"
+          style="flex:1;background:var(--surf);border:1.5px solid ${g.color}60;border-radius:10px;
+          padding:10px 12px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;outline:none"
+          oninput="updateCustomGuess(${i}, this.value)">
+      </div>
+      <div id="emoji-picker-${i}" style="display:none;flex-wrap:wrap;gap:4px;background:var(--card);
+        border:1.5px solid var(--border);border-radius:10px;padding:8px">
+        ${WHEEL_EMOJIS.map(e => `<button onclick="pickEmoji(${i},'${e}')"
+          style="font-size:20px;width:36px;height:36px;border:none;background:none;cursor:pointer;
+          border-radius:8px;transition:background .1s" onmouseover="this.style.background='var(--surf)'"
+          onmouseout="this.style.background='none'">${e}</button>`).join('')}
+      </div>`;
     container.appendChild(row);
   });
+}
+
+function openEmojiPicker(idx) {
+  // Close all others first
+  GUESSES.forEach((_, i) => {
+    if (i !== idx) {
+      const p = document.getElementById('emoji-picker-' + i);
+      if (p) p.style.display = 'none';
+    }
+  });
+  const picker = document.getElementById('emoji-picker-' + idx);
+  if (picker) picker.style.display = picker.style.display === 'none' ? 'flex' : 'none';
+}
+
+function pickEmoji(idx, emoji) {
+  GUESSES[idx] = { ...GUESSES[idx], emoji };
+  const btn = document.getElementById('emoji-btn-' + idx);
+  if (btn) btn.textContent = emoji;
+  const picker = document.getElementById('emoji-picker-' + idx);
+  if (picker) picker.style.display = 'none';
 }
 
 function updateCustomGuess(idx, val) {
