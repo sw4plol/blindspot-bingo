@@ -201,7 +201,7 @@ canvas#wcanvas{border-radius:50%;box-shadow:0 0 0 3px #1e1e2a,0 0 40px rgba(0,0,
     <button class="btn btn-ghost" onclick="goTo('leaderboard')">🏆 Classement</button>
     <button class="btn btn-ghost btn-sm" onclick="fullReset()" style="max-width:320px;opacity:.5">⟳ Réinitialiser</button>
   </div>
-  <div style="position:absolute;bottom:14px;left:16px;font-size:10px;color:rgba(255,255,255,.25);letter-spacing:1px;font-family:'DM Sans',sans-serif">v0.2320</div>
+  <div style="position:absolute;bottom:14px;left:16px;font-size:10px;color:rgba(255,255,255,.25);letter-spacing:1px;font-family:'DM Sans',sans-serif">v0.1280</div>
 </div>
 
 <!-- GENRE SELECT -->
@@ -865,6 +865,7 @@ async function startGame() {
     G.players.forEach(p => { p.card=genCard(); p.marked=new Array(25).fill(null); p.markedSongs={}; p.score=0; p.bingos=0; });
 
     ls.style.display = 'none';
+    saveState();
     goTo('spin-screen');
   } catch(e) {
     ls.style.display = 'none';
@@ -1447,22 +1448,31 @@ const SAVE_KEY = 'blindspot_state';
 
 function saveState() {
   try {
+    // Ultra-compressed tracks: only what's needed
+    const slimTracks = G.gameTracks.map(t => [
+      t.id,                          // 0
+      t.name,                        // 1
+      t.artists?.[0]?.name || '?',   // 2
+      t.preview_url,                 // 3
+      t.year || '',                  // 4
+      t.album?.images?.[0]?.url || '' // 5
+    ]);
     const state = {
-      selectedGenre: G.selectedGenre,
-      players: G.players.map(p => ({
-        name: p.name, color: p.color, score: p.score, bingos: p.bingos,
-        card: p.card, marked: p.marked, markedSongs: p.markedSongs || {}
+      g: G.selectedGenre,
+      p: G.players.map(p => ({
+        n: p.name, c: p.color, s: p.score, b: p.bingos,
+        k: p.card, m: p.marked, ms: p.markedSongs || {}
       })),
-      gameTracks: G.gameTracks,
-      currentTrackIdx: G.currentTrackIdx,
-      turnNum: G.turnNum,
-      history: G.history,
-      currentGuess: G.currentGuess,
-      currentPlayer: G.currentPlayer,
-      currentScreen: document.querySelector('.screen.active')?.id || 'home'
+      t: slimTracks,
+      i: G.currentTrackIdx,
+      r: G.turnNum,
+      h: G.history,
+      q: G.currentGuess,
+      u: G.currentPlayer,
+      sc: document.querySelector('.screen.active')?.id || 'home'
     };
     localStorage.setItem(SAVE_KEY, JSON.stringify(state));
-  } catch(e) { console.warn('Save failed:', e); }
+  } catch(e) { console.warn('Save failed:', e.message); }
 }
 
 function restoreState() {
@@ -1470,16 +1480,25 @@ function restoreState() {
     const raw = localStorage.getItem(SAVE_KEY);
     if (!raw) return false;
     const state = JSON.parse(raw);
-    if (!state.gameTracks?.length || !state.players?.length) return false;
+    if (!state.t?.length || !state.p?.length) return false;
 
-    G.selectedGenre = state.selectedGenre;
-    G.players = state.players;
-    G.gameTracks = state.gameTracks;
-    G.currentTrackIdx = state.currentTrackIdx || 0;
-    G.turnNum = state.turnNum || 1;
-    G.history = state.history || [];
-    G.currentGuess = state.currentGuess || null;
-    G.currentPlayer = state.currentPlayer || 0;
+    G.selectedGenre = state.g;
+    G.players = state.p.map(p => ({
+      name: p.n, color: p.c, score: p.s, bingos: p.b,
+      card: p.k, marked: p.m, markedSongs: p.ms || {}
+    }));
+    // Decompress tracks
+    G.gameTracks = state.t.map(t => ({
+      id: t[0], name: t[1],
+      artists: [{ name: t[2] }],
+      preview_url: t[3], year: t[4],
+      album: { images: [{ url: t[5] }], release_date: t[4] ? t[4]+'-01-01' : '' }
+    }));
+    G.currentTrackIdx = state.i || 0;
+    G.turnNum = state.r || 1;
+    G.history = state.h || [];
+    G.currentGuess = state.q || null;
+    G.currentPlayer = state.u || 0;
     G.playedIds = new Set();
 
     // Go to the saved screen (but not play-screen — restart from spin)
