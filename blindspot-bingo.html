@@ -201,7 +201,7 @@ canvas#wcanvas{border-radius:50%;box-shadow:0 0 0 3px #1e1e2a,0 0 40px rgba(0,0,
     <button class="btn btn-ghost" onclick="goTo('leaderboard')">🏆 Classement</button>
     <button class="btn btn-ghost btn-sm" onclick="fullReset()" style="max-width:320px;opacity:.5">⟳ Réinitialiser</button>
   </div>
-  <div style="position:absolute;bottom:14px;left:16px;font-size:10px;color:rgba(255,255,255,.25);letter-spacing:1px;font-family:'DM Sans',sans-serif">v0.5561</div>
+  <div style="position:absolute;bottom:14px;left:16px;font-size:10px;color:rgba(255,255,255,.25);letter-spacing:1px;font-family:'DM Sans',sans-serif">v0.8611</div>
 </div>
 
 <!-- GENRE SELECT -->
@@ -1445,7 +1445,8 @@ function saveState() {
       q: G.currentGuess,
       u: G.currentPlayer,
       sc: document.querySelector('.screen.active')?.id || 'home',
-      hs: G.hasSpun
+      hs: G.hasSpun,
+      wa: wAngle
     };
     localStorage.setItem(SAVE_KEY, JSON.stringify(state));
   } catch(e) { console.warn('Save failed:', e.message); }
@@ -1473,9 +1474,10 @@ function restoreState() {
     G.currentTrackIdx = state.i || 0;
     G.turnNum = state.r || 1;
     G.history = state.h || [];
-    G.currentGuess = state.q || null;
+    G.currentGuess = state.q ? (GUESSES.find(g=>g.id===state.q.id) || state.q) : null;
     G.currentPlayer = state.u || 0;
     G.hasSpun = state.hs || false;
+    if (state.wa) wAngle = state.wa;
     G.playedIds = new Set();
 
     // Go to the saved screen (but not play-screen — restart from spin)
