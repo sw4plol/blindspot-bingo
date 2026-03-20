@@ -20,11 +20,23 @@ export default async function handler(req, res) {
         const discogsData = await discogsRes.json();
         const results = discogsData.results || [];
 
+        const remasterPattern = /remaster|reissue|anniversary|deluxe|expanded|edition|mix|iggy mix|stereo|mono|bonus/i;
         let bestYear = null;
         for (const r of results) {
+          // Ignorer les remasters/rééditions
+          if (remasterPattern.test(r.title || '')) continue;
           const y = r.year?.toString();
           if (y?.match(/^\d{4}$/) && y > '1900') {
             if (!bestYear || parseInt(y) < parseInt(bestYear)) bestYear = y;
+          }
+        }
+        // Si tout filtré, prendre quand même la plus ancienne
+        if (!bestYear) {
+          for (const r of results) {
+            const y = r.year?.toString();
+            if (y?.match(/^\d{4}$/) && y > '1900') {
+              if (!bestYear || parseInt(y) < parseInt(bestYear)) bestYear = y;
+            }
           }
         }
 
