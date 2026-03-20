@@ -80,22 +80,29 @@ Artist: ${artist}`;
 
     const data = await response.json();
     let text = data.choices?.[0]?.message?.content?.trim() || '';
+    console.log('raw text:', text);
 
     if (mode === 'funfact') {
       // Enlever le bloc <think>...</think> de deepseek
       text = text.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
-      try {
-        const clean = text.replace(/```json|```/g, '').trim();
-        const parsed = JSON.parse(clean);
-        return res.status(200).json(parsed);
-      } catch(e) {
-        return res.status(200).json({ question: null });
+      // Extraire le JSON même s'il y a du texte autour
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        try {
+          const parsed = JSON.parse(jsonMatch[0]);
+          if (parsed.question && Array.isArray(parsed.choices) && parsed.choices.length === 4) {
+            return res.status(200).json(parsed);
+          }
+        } catch(e) {}
       }
+      console.log('JSON parse failed, text was:', text);
+      return res.status(200).json({ question: null });
     }
 
     const year_result = text === 'UNKNOWN' ? null : (text.match(/\d+/)?.[0] || null);
     res.status(200).json({ year: year_result });
   } catch (e) {
+    console.log('Exception:', e.message);
     res.status(500).json({ error: e.message });
   }
 }
