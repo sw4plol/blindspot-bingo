@@ -216,7 +216,7 @@ canvas#wcanvas{border-radius:50%;box-shadow:0 0 0 3px #1e1e2a,0 0 40px rgba(0,0,
     <button class="btn btn-ghost" onclick="goTo('leaderboard')">🏆 Classement</button>
     <button class="btn btn-ghost btn-sm" onclick="fullReset()" style="max-width:320px;opacity:.5">⟳ Réinitialiser</button>
   </div>
-  <div style="position:absolute;bottom:14px;left:16px;font-size:10px;color:rgba(255,255,255,.25);letter-spacing:1px;font-family:'DM Sans',sans-serif">v0.1241</div>
+  <div style="position:absolute;bottom:14px;left:16px;font-size:10px;color:rgba(255,255,255,.25);letter-spacing:1px;font-family:'DM Sans',sans-serif">v0.1242</div>
 </div>
 
 <!-- GENRE SELECT -->
@@ -1284,7 +1284,7 @@ function revealTrack() {
   document.getElementById("rev-overlay").classList.add("show");
 
 }
-function closeReveal(){ document.getElementById('rev-overlay').classList.remove('show'); document.getElementById('rev-modal-title').textContent = '🎤 La chanson etait...'; }
+function closeReveal(){ document.getElementById('rev-overlay').classList.remove('show'); document.getElementById('rev-modal-title').textContent = '🎤 La chanson etait...'; const fw=document.getElementById('funfact-wrap'); if(fw){fw.style.display='none';fw.innerHTML='';} const fb=document.getElementById('funfact-btn'); if(fb){fb.style.display='';fb.disabled=false;fb.textContent='🎲 Fun Fact';} }
 
 function showHistory() {
   if (!G.history || !G.history.length) {
