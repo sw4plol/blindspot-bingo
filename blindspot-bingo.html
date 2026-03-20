@@ -216,7 +216,7 @@ canvas#wcanvas{border-radius:50%;box-shadow:0 0 0 3px #1e1e2a,0 0 40px rgba(0,0,
     <button class="btn btn-ghost" onclick="goTo('leaderboard')">🏆 Classement</button>
     <button class="btn btn-ghost btn-sm" onclick="fullReset()" style="max-width:320px;opacity:.5">⟳ Réinitialiser</button>
   </div>
-  <div style="position:absolute;bottom:14px;left:16px;font-size:10px;color:rgba(255,255,255,.25);letter-spacing:1px;font-family:'DM Sans',sans-serif">v0.1250</div>
+  <div style="position:absolute;bottom:14px;left:16px;font-size:10px;color:rgba(255,255,255,.25);letter-spacing:1px;font-family:'DM Sans',sans-serif">v0.1251</div>
 </div>
 
 <!-- GENRE SELECT -->
@@ -1147,7 +1147,13 @@ function fmt(s){ const m=Math.floor(s/60),sc=Math.floor(s%60); return m+':'+(sc<
 async function loadFunFact() {
   const btn = document.getElementById('funfact-btn');
   const wrap = document.getElementById('funfact-wrap');
-  if (!btn || !wrap || btn.dataset.locked) return;
+  if (!btn || !wrap) return;
+  // Si déjà généré, toggle affichage
+  if (btn.dataset.locked && window._funfactData) {
+    wrap.style.display = wrap.style.display === 'none' ? 'flex' : 'none';
+    return;
+  }
+  if (btn.dataset.locked) return;
   btn.textContent = '⏳ Génération...';
   btn.disabled = true;
 
@@ -1164,9 +1170,9 @@ async function loadFunFact() {
     const data = await response.json();
     if (data.question && data.choices && data.answer !== undefined) {
       showFunFact(data.question, data.choices, data.answer);
+      window._funfactData = { question: data.question, choices: data.choices, answer: data.answer };
       btn.textContent = '🎲 Fun Fact ✓';
       btn.dataset.locked = '1';
-      btn.onclick = () => { const fw = document.getElementById('funfact-wrap'); if(fw) fw.style.display = fw.style.display === 'none' ? 'flex' : 'none'; };
     } else {
       btn.textContent = '🎲 Fun Fact';
       btn.disabled = false;
@@ -1297,7 +1303,7 @@ function revealTrack() {
   document.getElementById("rev-overlay").classList.add("show");
 
 }
-function closeReveal(){ document.getElementById('rev-overlay').classList.remove('show'); document.getElementById('rev-modal-title').textContent = '🎤 La chanson etait...'; const fw=document.getElementById('funfact-wrap'); if(fw){fw.style.display='none';fw.innerHTML='';} const fb=document.getElementById('funfact-btn'); if(fb){fb.style.display='';fb.disabled=false;fb.textContent='🎲 Fun Fact';} }
+function closeReveal(){ document.getElementById('rev-overlay').classList.remove('show'); document.getElementById('rev-modal-title').textContent = '🎤 La chanson etait...'; const fw=document.getElementById('funfact-wrap'); if(fw){fw.style.display='none';fw.innerHTML='';} const fb=document.getElementById('funfact-btn'); if(fb){fb.style.display='';fb.disabled=false;fb.textContent='🎲 Fun Fact';delete fb.dataset.locked;} window._funfactData=null; }
 
 function showHistory() {
   if (!G.history || !G.history.length) {
