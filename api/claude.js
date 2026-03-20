@@ -16,7 +16,7 @@ export default async function handler(req, res) {
     let temperature = 0;
 
     if (mode === 'funfact') {
-      model = 'deepseek-r1-distill-llama-70b';
+      model = 'llama-3.3-70b-versatile';
       max_tokens = 500;
       temperature = 0.5;
       prompt = `You are a music trivia expert. Generate ONE multiple choice question about "${track}" by ${artist}.
@@ -80,7 +80,7 @@ Artist: ${artist}`;
 
     const data = await response.json();
     let text = data.choices?.[0]?.message?.content?.trim() || '';
-    console.log('HTTP:', response.status); console.log('full data:', JSON.stringify(data).substring(0,500)); console.log('raw text:', text);
+    
 
     if (mode === 'funfact') {
       // Enlever le bloc <think>...</think> de deepseek
@@ -95,7 +95,7 @@ Artist: ${artist}`;
           }
         } catch(e) {}
       }
-      console.log('JSON parse failed, text was:', text);
+      
       return res.status(200).json({ question: null });
     }
 
