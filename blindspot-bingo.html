@@ -763,6 +763,7 @@ function parseDeezerTrack(t) {
     preview_url: t.preview,
     year: year,
     album: {
+      id: t.album?.id || null,
       name: t.album?.title || '',
       images: [{ url: t.album?.cover_medium || '' }],
       release_date: rd
