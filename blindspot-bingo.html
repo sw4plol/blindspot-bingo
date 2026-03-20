@@ -1133,6 +1133,43 @@ function setVol(v) {
 }
 function fmt(s){ const m=Math.floor(s/60),sc=Math.floor(s%60); return m+':'+(sc<10?'0':'')+sc; }
 
+
+async function askAIYear(trackName, artistName) {
+  const btn = document.getElementById('year-ai-btn');
+  if (!btn) return;
+  btn.textContent = '⏳';
+  btn.style.pointerEvents = 'none';
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 10,
+        messages: [{
+          role: 'user',
+          content: 'What year was the song "' + trackName + '" by ' + artistName + ' released? Reply with only the 4-digit year, nothing else.'
+        }]
+      })
+    });
+    const data = await response.json();
+    const year = data.content?.[0]?.text?.trim().match(/\d{4}/)?.[0];
+    if (year) {
+      btn.textContent = '📅 ' + year;
+      btn.style.background = 'rgba(255,179,0,.2)';
+      btn.style.color = 'var(--g2)';
+      // Sauvegarder sur le track courant
+      const t = G.gameTracks[G.currentTrackIdx];
+      if (t) t.year = year;
+    } else {
+      btn.textContent = '📅 ?';
+    }
+  } catch(e) {
+    btn.textContent = '📅 ✗';
+  }
+  btn.style.pointerEvents = 'auto';
+}
+
 function revealTrack() {
    const t=G.gameTracks[G.currentTrackIdx];
    if (!t) { showToast("Aucune chanson active"); return; }
@@ -1152,7 +1189,7 @@ function revealTrack() {
      `<div class="rev-track">${esc(t.name)}</div>` +
      `<div class="rev-artist">${esc(artist)}</div>` +
      `<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:6px">` +
-       `<div style="color:var(--g2);font-size:12px;font-weight:600;background:var(--surf);padding:4px 10px;border-radius:20px">📅 ${year}</div>` +
+       `<div id="year-ai-btn" onclick="askAIYear(t.name, '${esc(artist)}')" style="color:var(--g2);font-size:12px;font-weight:600;background:var(--surf);padding:4px 10px;border-radius:20px;cursor:pointer;transition:background .2s" title="Demander à l'IA">📅 ${year}</div>` +
        `<div style="color:#ff4560;font-size:12px;font-weight:600;background:var(--surf);padding:4px 10px;border-radius:20px">🔢 ${wordCount} mot${wordCount>1?"s":""}</div>` +
       `</div>`;
   document.getElementById("rev-overlay").classList.add("show");
