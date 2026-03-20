@@ -23,7 +23,7 @@ Return ONLY this JSON, no markdown, all text in French: {"question":"...","choic
       prompt = `How many official members does "${artist}" have? Solo = 1. Return ONLY a number or UNKNOWN. No text, no explanation.`;
 
     } else {
-      prompt = `What year was "${track}" by ${artist} first officially released? Prioritize the original release, not remasters or compilations. Reply ONLY with the 4-digit year or UNKNOWN.`;
+      prompt = `What year was "${track}" by ${artist} first officially released? Prioritize the original release, not remasters or compilations. If you are not 100% sure, make your best educated guess based on the artist's discography and activity period — never reply UNKNOWN, always give a year. Reply ONLY with the 4-digit year.`;
     }
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
