@@ -209,7 +209,7 @@ canvas#wcanvas{border-radius:50%;box-shadow:0 0 0 3px #1e1e2a,0 0 40px rgba(0,0,
     <button class="btn btn-ghost" onclick="goTo('leaderboard')">🏆 Classement</button>
     <button class="btn btn-ghost btn-sm" onclick="fullReset()" style="max-width:320px;opacity:.5">⟳ Réinitialiser</button>
   </div>
-  <div style="position:absolute;bottom:14px;left:16px;font-size:10px;color:rgba(255,255,255,.25);letter-spacing:1px;font-family:'DM Sans',sans-serif">v0.1213</div>
+  <div style="position:absolute;bottom:14px;left:16px;font-size:10px;color:rgba(255,255,255,.25);letter-spacing:1px;font-family:'DM Sans',sans-serif">v0.1214</div>
 </div>
 
 <!-- GENRE SELECT -->
@@ -1135,7 +1135,7 @@ async function askAIYear() {
       body: JSON.stringify({ track: trackName, artist: artistName })
     });
     const data = await response.json();
-    console.log('claude response:', JSON.stringify(data));
+    console.log('claude response:', JSON.stringify(data), 'debug:', data.debug);
     const year = data.year;
     if (year) {
       btn.textContent = '📅 ' + year;
