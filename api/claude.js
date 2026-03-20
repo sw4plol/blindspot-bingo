@@ -14,14 +14,12 @@ export default async function handler(req, res) {
     if (!mode && track && track !== '__members__') {
       // 1. Essayer MusicBrainz
       try {
-        const q = encodeURIComponent(`${track} ${artist}`);
-        console.log('Calling MusicBrainz...');
-        const mbRes = await fetch(`https://musicbrainz.org/ws/2/recording/?query=${q}&limit=10&fmt=json`, {
+        const q = encodeURIComponent(`recording:"${track}" AND artistname:"${artist}"`);
+        const mbRes = await fetch(`https://musicbrainz.org/ws/2/recording/?query=${q}&limit=5&fmt=json`, {
           headers: { 'User-Agent': 'BlindspotBingo/1.0 (contact@blindspot.app)' }
         });
         const mbData = await mbRes.json();
         const recordings = mbData.recordings || [];
-        console.log('MB response score0:', recordings[0]?.score, 'title:', recordings[0]?.title);
 
         // Prendre le first-release-date du recording avec le meilleur score et titre le plus proche
         let bestYear = null;
@@ -41,10 +39,10 @@ export default async function handler(req, res) {
           if (y.match(/^\d{4}$/) && y > '1900') { bestYear = y; break; }
         }
 
-        console.log('MB bestYear:', bestYear, 'recordings count:', recordings.length);
+        
         if (bestYear) return res.status(200).json({ year: bestYear, source: 'musicbrainz' });
       } catch(e) {
-        console.log('MusicBrainz exception:', e.message);
+        
       }
 
       // 2. Fallback Groq si MusicBrainz ne trouve rien
