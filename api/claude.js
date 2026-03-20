@@ -23,22 +23,22 @@ export default async function handler(req, res) {
         const recordings = mbData.recordings || [];
         console.log('MB response score0:', recordings[0]?.score, 'title:', recordings[0]?.title);
 
+        // Prendre le first-release-date du recording avec le meilleur score et titre le plus proche
         let bestYear = null;
-        for (const rec of recordings) {
-          // Ignorer les scores trop bas
-          if (rec.score < 60) continue;
-          for (const release of (rec.releases || [])) {
-            const releaseGroup = release['release-group'];
-            // Ignorer compilations, remasters, live
-            const type = releaseGroup?.['primary-type']?.toLowerCase() || '';
-            const secondaryTypes = (releaseGroup?.['secondary-types'] || []).map(t => t.toLowerCase());
-            if (secondaryTypes.some(t => ['compilation','live','remix'].includes(t))) continue;
-            const date = release.date || rec['first-release-date'] || '';
-            const y = date.substring(0, 4);
-            if (y.match(/^\d{4}$/) && y > '1900') {
-              if (!bestYear || parseInt(y) < parseInt(bestYear)) bestYear = y;
-            }
-          }
+        const trackLower = track.toLowerCase();
+        // Trier par similarité du titre d'abord, puis score
+        const sorted = recordings
+          .filter(r => r.score >= 60)
+          .sort((a, b) => {
+            const aExact = a.title.toLowerCase() === trackLower ? 1 : 0;
+            const bExact = b.title.toLowerCase() === trackLower ? 1 : 0;
+            if (aExact !== bExact) return bExact - aExact;
+            return b.score - a.score;
+          });
+        for (const rec of sorted) {
+          const date = rec['first-release-date'] || rec.releases?.[0]?.date || '';
+          const y = date.substring(0, 4);
+          if (y.match(/^\d{4}$/) && y > '1900') { bestYear = y; break; }
         }
 
         console.log('MB bestYear:', bestYear, 'recordings count:', recordings.length);
