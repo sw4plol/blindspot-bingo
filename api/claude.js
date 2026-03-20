@@ -7,7 +7,7 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
-    const { track, artist, mode, year } = req.body;
+    const { track, artist, mode } = req.body;
     if (!artist) return res.status(400).json({ error: 'Missing artist' });
 
     let prompt;
@@ -27,24 +27,16 @@ Output rules:
 Where "answer" is the index (0-3) of the correct choice.`;
 
     } else if (track === '__members__') {
-      const releaseYear = year || new Date().getFullYear();
-      prompt = `You are a music historian specializing in band lineups over time.
-Task: Given a music group and a specific year, determine how many official members were in the group DURING that year.
+      prompt = `You are a music historian.
+Task: How many official members does the band or artist "${artist}" have at their peak / current lineup?
 Instructions:
-1. Count ONLY members officially part of the group in that exact year.
-2. Exclude past members who had already left before that year.
-3. Exclude future members who had not yet joined.
-4. Do NOT include touring or session musicians.
-5. If a member joined or left during that year, count them ONLY if they were part of the group for a significant portion of that year.
-6. Use historically accurate lineup timelines when possible.
-7. If the group or year cannot be reliably determined, output exactly: UNKNOWN
-8. If the artist is less known, make sure you have enough information without mistakes.
-9. Don't hesitate to double check your own answer so you know you truly have the right one.
+1. Count ONLY official members, not touring or session musicians.
+2. If it's a solo artist, return 1.
+3. If the artist is less known, make sure you have enough information without mistakes.
+4. Don't hesitate to double check your own answer so you know you truly have the right one.
+5. If truly unknown, output: UNKNOWN
 Output rules:
-- Return ONLY: a single integer (e.g., 4) OR UNKNOWN. No text, no explanation.
-
-Artist: ${artist}
-Year: ${releaseYear}`;
+- Return ONLY: a single integer (e.g., 4) OR UNKNOWN. No text, no explanation.`;
 
     } else {
       prompt = `You are a music metadata expert with strong reasoning ability.
