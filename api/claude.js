@@ -14,23 +14,24 @@ export default async function handler(req, res) {
     if (!mode && track && track !== '__members__') {
       try {
         const q = encodeURIComponent(`${track} ${artist}`);
-        const discogsRes = await fetch(`https://api.discogs.com/database/search?q=${q}&type=release&per_page=5&token=${process.env.DISCOGS_TOKEN}`, {
+        const discogsRes = await fetch(`https://api.discogs.com/database/search?q=${q}&type=release&format=album,single&per_page=10&token=${process.env.DISCOGS_TOKEN}`, {
           headers: { 'User-Agent': 'BlindspotBingo/1.0' }
         });
         const discogsData = await discogsRes.json();
         const results = discogsData.results || [];
 
-        const remasterPattern = /remaster|reissue|anniversary|deluxe|expanded|edition|mix|iggy mix|stereo|mono|bonus/i;
+        const remasterPattern = /remaster|reissue|anniversary|deluxe|expanded|edition|stereo|mono|bonus|compilation|best of|greatest hits|collection/i;
+        const formatBlacklist = /compilation|box set/i;
         let bestYear = null;
         for (const r of results) {
-          // Ignorer les remasters/rééditions
           if (remasterPattern.test(r.title || '')) continue;
+          if (formatBlacklist.test((r.format || []).join(' '))) continue;
           const y = r.year?.toString();
           if (y?.match(/^\d{4}$/) && y > '1900') {
             if (!bestYear || parseInt(y) < parseInt(bestYear)) bestYear = y;
           }
         }
-        // Si tout filtré, prendre quand même la plus ancienne
+        // Fallback : plus ancienne sans filtre
         if (!bestYear) {
           for (const r of results) {
             const y = r.year?.toString();
