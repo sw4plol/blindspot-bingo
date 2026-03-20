@@ -12,9 +12,9 @@ export default async function handler(req, res) {
 
     let prompt;
     if (track === '__members__') {
-      prompt = `How many members does the music artist or band "${artist}" have? If it's a solo artist, reply "1". Reply with only a single number, nothing else.`;
+      prompt = `How many members does the music artist or band "${artist}" have? If it's a solo artist, reply "1". Reply with only a single number, nothing else. Be as precise as possible, make no mistakes.`;
     } else {
-      prompt = `What year was the song "${track}" by ${artist} originally released? Reply with only the 4-digit year, nothing else.`;
+      prompt = `What year was "${track}" by ${artist} first released as a single or on an album? Ignore remasters, live versions, and compilations. Reply with only the 4-digit year, nothing else. Be as precise as possible, make no mistakes.`;
     }
 
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -24,8 +24,9 @@ export default async function handler(req, res) {
         'Authorization': 'Bearer ' + process.env.GROQ_API_KEY
       },
       body: JSON.stringify({
-        model: 'llama-3.1-8b-instant',
+        model: 'llama-3.3-70b-versatile',
         max_tokens: 10,
+        temperature: 0,
         messages: [{ role: 'user', content: prompt }]
       })
     });
