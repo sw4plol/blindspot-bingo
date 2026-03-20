@@ -80,7 +80,7 @@ Artist: ${artist}`;
 
     const data = await response.json();
     let text = data.choices?.[0]?.message?.content?.trim() || '';
-    console.log('raw text:', text);
+    console.log('HTTP:', response.status); console.log('full data:', JSON.stringify(data).substring(0,500)); console.log('raw text:', text);
 
     if (mode === 'funfact') {
       // Enlever le bloc <think>...</think> de deepseek
