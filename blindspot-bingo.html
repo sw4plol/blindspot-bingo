@@ -216,7 +216,7 @@ canvas#wcanvas{border-radius:50%;box-shadow:0 0 0 3px #1e1e2a,0 0 40px rgba(0,0,
     <button class="btn btn-ghost" onclick="goTo('leaderboard')">🏆 Classement</button>
     <button class="btn btn-ghost btn-sm" onclick="fullReset()" style="max-width:320px;opacity:.5">⟳ Réinitialiser</button>
   </div>
-  <div style="position:absolute;bottom:14px;left:16px;font-size:10px;color:rgba(255,255,255,.25);letter-spacing:1px;font-family:'DM Sans',sans-serif">v0.1251</div>
+  <div style="position:absolute;bottom:14px;left:16px;font-size:10px;color:rgba(255,255,255,.25);letter-spacing:1px;font-family:'DM Sans',sans-serif">v0.1252</div>
 </div>
 
 <!-- GENRE SELECT -->
@@ -1300,10 +1300,15 @@ function revealTrack() {
        `<div id="members-ai-btn" onclick="askAIMembers()" style="color:var(--g3);font-size:12px;font-weight:600;background:var(--surf);padding:4px 10px;border-radius:20px;cursor:pointer;transition:background .2s" title="Nombre de membres">👥 ?</div>` +
       `</div>`;
   window._revTrack = { name: t.name, artist: artist, year: year };
+  // Restaurer le funfact si déjà généré pour cette chanson
+  if (window._funfactData) {
+    const fw = document.getElementById('funfact-wrap');
+    if (fw && fw.innerHTML === '') showFunFact(window._funfactData.question, window._funfactData.choices, window._funfactData.answer);
+  }
   document.getElementById("rev-overlay").classList.add("show");
 
 }
-function closeReveal(){ document.getElementById('rev-overlay').classList.remove('show'); document.getElementById('rev-modal-title').textContent = '🎤 La chanson etait...'; const fw=document.getElementById('funfact-wrap'); if(fw){fw.style.display='none';fw.innerHTML='';} const fb=document.getElementById('funfact-btn'); if(fb){fb.style.display='';fb.disabled=false;fb.textContent='🎲 Fun Fact';delete fb.dataset.locked;} window._funfactData=null; }
+function closeReveal(){ document.getElementById('rev-overlay').classList.remove('show'); document.getElementById('rev-modal-title').textContent = '🎤 La chanson etait...'; const fw=document.getElementById('funfact-wrap'); if(fw){fw.style.display='none';fw.innerHTML='';} const fb=document.getElementById('funfact-btn'); if(fb){fb.style.display='';fb.disabled=false; if(!window._funfactData){fb.textContent='🎲 Fun Fact';delete fb.dataset.locked;} else {fb.textContent='🎲 Fun Fact ✓';fb.dataset.locked='1';}} }
 
 function showHistory() {
   if (!G.history || !G.history.length) {
@@ -1395,6 +1400,7 @@ function nextTurn() {
   addToHistory(true);
   G.hasSpun = false;
   G.turnNum++;
+  window._funfactData = null;
   G.currentGuess=null;
   // Mark current as played
   if (G.gameTracks[G.currentTrackIdx]) G.playedIds.add(G.gameTracks[G.currentTrackIdx].id);
