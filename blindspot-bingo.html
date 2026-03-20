@@ -209,7 +209,7 @@ canvas#wcanvas{border-radius:50%;box-shadow:0 0 0 3px #1e1e2a,0 0 40px rgba(0,0,
     <button class="btn btn-ghost" onclick="goTo('leaderboard')">🏆 Classement</button>
     <button class="btn btn-ghost btn-sm" onclick="fullReset()" style="max-width:320px;opacity:.5">⟳ Réinitialiser</button>
   </div>
-  <div style="position:absolute;bottom:14px;left:16px;font-size:10px;color:rgba(255,255,255,.25);letter-spacing:1px;font-family:'DM Sans',sans-serif">v0.1185</div>
+  <div style="position:absolute;bottom:14px;left:16px;font-size:10px;color:rgba(255,255,255,.25);letter-spacing:1px;font-family:'DM Sans',sans-serif">v0.1200</div>
 </div>
 
 <!-- GENRE SELECT -->
@@ -264,7 +264,7 @@ canvas#wcanvas{border-radius:50%;box-shadow:0 0 0 3px #1e1e2a,0 0 40px rgba(0,0,
         <div id="custom-wheel-fields" style="display:flex;flex-direction:column;gap:6px"></div>
       </div>
     </div>
-    <button class="btn btn-fire" onclick="startGame()" style="margin-top:auto">▶ Demarrer</button>
+    <button class="btn btn-fire" id="start-btn" onclick="startGame()" style="margin-top:auto">▶ Demarrer</button>
   </div>
 </div>
 
@@ -774,6 +774,8 @@ function parseDeezerTrack(t) {
 async function startGame() {
   if (!G.selectedGenre) { showToast('Choisis un genre !'); return; }
   if (G.players.length < 1) { showToast('Ajoute au moins 1 joueur !'); return; }
+  const startBtn = document.getElementById('start-btn');
+  if (startBtn) { startBtn.disabled = true; startBtn.textContent = '⏳ Chargement...'; }
 
   const ls = document.getElementById('load-status');
   const msg = document.getElementById('load-msg');
@@ -894,6 +896,8 @@ async function startGame() {
     ls.style.display = 'none';
     showToast('Erreur: ' + e.message);
     console.error(e);
+    const startBtn2 = document.getElementById('start-btn');
+    if (startBtn2) { startBtn2.disabled = false; startBtn2.textContent = '▶ Demarrer'; }
   }
 }
 
@@ -1117,7 +1121,9 @@ function setVol(v) {
 function fmt(s){ const m=Math.floor(s/60),sc=Math.floor(s%60); return m+':'+(sc<10?'0':'')+sc; }
 
 
-async function askAIYear(trackName, artistName) {
+async function askAIYear() {
+  const trackName = window._revTrack?.name || "";
+  const artistName = window._revTrack?.artist || "";
   const btn = document.getElementById('year-ai-btn');
   if (!btn) return;
   btn.textContent = '⏳';
@@ -1167,9 +1173,10 @@ function revealTrack() {
      `<div class="rev-track">${esc(t.name)}</div>` +
      `<div class="rev-artist">${esc(artist)}</div>` +
      `<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:6px">` +
-       `<div id="year-ai-btn" onclick="askAIYear(${JSON.stringify(t.name)}, ${JSON.stringify(artist)})" style="color:var(--g2);font-size:12px;font-weight:600;background:var(--surf);padding:4px 10px;border-radius:20px;cursor:pointer;transition:background .2s" title="Cliquer pour chercher l'année">📅 ${year}</div>` +
+       `<div id="year-ai-btn" onclick="askAIYear()" style="color:var(--g2);font-size:12px;font-weight:600;background:var(--surf);padding:4px 10px;border-radius:20px;cursor:pointer;transition:background .2s" title="Cliquer pour chercher l'année">📅 ${year}</div>` +
        `<div style="color:#ff4560;font-size:12px;font-weight:600;background:var(--surf);padding:4px 10px;border-radius:20px">🔢 ${wordCount} mot${wordCount>1?"s":""}</div>` +
       `</div>`;
+  window._revTrack = { name: t.name, artist: artist };
   document.getElementById("rev-overlay").classList.add("show");
 
 }
