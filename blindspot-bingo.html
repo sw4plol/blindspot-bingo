@@ -758,7 +758,7 @@ function parseDeezerTrack(t) {
     name: t.title,
     artists: [{ name: t.artist?.name || '?' }],
     preview_url: t.preview,
-    year: t.release_date ? t.release_date.substring(0,4) : null,
+    year: (t.release_date || t.album?.release_date) ? (t.release_date || t.album?.release_date).substring(0,4) : null,
     album: {
       name: t.album?.title || '',
       images: [{ url: t.album?.cover_medium || '' }],
@@ -1360,6 +1360,9 @@ function unmarkCell(idx) {
   }
   p.marked[idx]=null;
   if (p.markedSongs) delete p.markedSongs[idx];
+  // Recalculate bingos from scratch after unmarking
+  let n=0; getLines().forEach(l=>{ if(l.every(i=>p.marked[i])) n++; }); p.bingos=n;
+  saveState();
   showToast('Case décochée');
   renderCard();
 }
