@@ -216,7 +216,7 @@ canvas#wcanvas{border-radius:50%;box-shadow:0 0 0 3px #1e1e2a,0 0 40px rgba(0,0,
     <button class="btn btn-ghost" onclick="goTo('leaderboard')">🏆 Classement</button>
     <button class="btn btn-ghost btn-sm" onclick="fullReset()" style="max-width:320px;opacity:.5">⟳ Réinitialiser</button>
   </div>
-  <div style="position:absolute;bottom:14px;left:16px;font-size:10px;color:rgba(255,255,255,.25);letter-spacing:1px;font-family:'DM Sans',sans-serif">v0.1242</div>
+  <div style="position:absolute;bottom:14px;left:16px;font-size:10px;color:rgba(255,255,255,.25);letter-spacing:1px;font-family:'DM Sans',sans-serif">v0.1243</div>
 </div>
 
 <!-- GENRE SELECT -->
@@ -763,6 +763,17 @@ function isLiveTrack(title) {
   return /\b(live|en direct|concert|tour|unplugged|acoustic version|live version|live at|live in|live from|recorded live|\blive\b)\b/.test(t);
 }
 
+function isRemixByOther(title, artistName) {
+  if (!title) return false;
+  const t = title.toLowerCase();
+  const a = artistName.toLowerCase();
+  // Contient "remix" mais PAS le nom de l'artiste dans la partie remix
+  const remixMatch = t.match(/\(([^)]*remix[^)]*)\)/i) || t.match(/\[([^\]]*remix[^\]]*)\]/i);
+  if (!remixMatch) return false;
+  // Si le nom de l'artiste est dans la partie remix, c'est son propre remix -> ok
+  return !remixMatch[1].toLowerCase().includes(a.split(' ')[0].toLowerCase());
+}
+
 function parseDeezerTrack(t) {
   // Deezer peut mettre la date sur le track OU sur l'album
   const rd = t.release_date || t.album?.release_date || '';
@@ -813,7 +824,7 @@ async function startGame() {
             // Top tracks
             const topData = await deezerGet('artist/' + artistId + '/top?limit=50');
             if (topData?.data) topData.data.forEach(t => {
-              if (t?.id && t.preview && t.title && !isLiveTrack(t.title))
+              if (t?.id && t.preview && t.title && !isLiveTrack(t.title) && !isRemixByOther(t.title, artistName))
                 tracksPerArtist[artistName].push(parseDeezerTrack(t));
             });
             // Albums for more variety
@@ -823,7 +834,7 @@ async function startGame() {
                 try {
                   const td = await deezerGet('album/' + album.id + '/tracks');
                   if (td?.data) td.data.forEach(t => {
-                    if (t?.id && t.preview && t.title && !isLiveTrack(t.title) && !tracksPerArtist[artistName].find(x=>x.id===t.id))
+                    if (t?.id && t.preview && t.title && !isLiveTrack(t.title) && !isRemixByOther(t.title, artistName) && !tracksPerArtist[artistName].find(x=>x.id===t.id))
                       tracksPerArtist[artistName].push(parseDeezerTrack(t));
                   });
                 } catch(e) {}
