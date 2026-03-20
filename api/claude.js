@@ -42,6 +42,7 @@ Return ONLY this JSON, no markdown, all text in French: {"question":"...","choic
 
     const data = await response.json();
     const text = data.content?.[0]?.text?.trim() || '';
+    console.log('anthropic text:', text, 'error:', data.error);
 
     if (mode === 'funfact') {
       const jsonMatch = text.match(/\{[\s\S]*\}/);
