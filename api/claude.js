@@ -21,22 +21,24 @@ export default async function handler(req, res) {
         const recordings = mbData.recordings || [];
 
         const trackLower = track.toLowerCase();
-        const sorted = recordings
-          .filter(r => r.score >= 60)
-          .sort((a, b) => {
-            const aExact = a.title.toLowerCase() === trackLower ? 1 : 0;
-            const bExact = b.title.toLowerCase() === trackLower ? 1 : 0;
-            if (aExact !== bExact) return bExact - aExact;
-            return b.score - a.score;
-          });
+        // Filtrer par score et titre proche, puis prendre la date la plus ancienne
+        const candidates = recordings.filter(r => {
+          if (r.score < 60) return false;
+          const titleLower = r.title.toLowerCase();
+          // Accepter si le titre contient le track ou vice versa
+          return titleLower.includes(trackLower) || trackLower.includes(titleLower);
+        });
 
-        for (const rec of sorted) {
-          const date = rec['first-release-date'] || rec.releases?.[0]?.date || '';
+        let bestYear = null;
+        for (const rec of candidates) {
+          const date = rec['first-release-date'] || '';
           const y = date.substring(0, 4);
           if (y.match(/^\d{4}$/) && y > '1900') {
-            return res.status(200).json({ year: y });
+            if (!bestYear || parseInt(y) < parseInt(bestYear)) bestYear = y;
           }
         }
+
+        if (bestYear) return res.status(200).json({ year: bestYear });
       } catch(e) {}
 
       return res.status(200).json({ year: null });
