@@ -183,6 +183,14 @@ canvas#wcanvas{border-radius:50%;box-shadow:0 0 0 3px #1e1e2a,0 0 40px rgba(0,0,
 
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:#c8ff3e;color:#000;font-weight:700;font-size:13px;padding:10px 20px;border-radius:30px;transition:transform .28s;z-index:100;white-space:nowrap;pointer-events:none}
 .toast.show{transform:translateX(-50%) translateY(0)}
+.artist-overflow{display:inline-flex;align-items:center;justify-content:center;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;cursor:default;position:relative;border:1.5px solid currentColor;opacity:.8;transition:opacity .15s;margin-left:2px}
+.artist-overflow:hover{opacity:1}
+.artist-tooltip{position:absolute;bottom:calc(100% + 10px);left:50%;transform:translateX(-50%) scale(.92);background:#1a1a28;border:1.5px solid #35354a;border-radius:14px;padding:10px 13px;display:flex;flex-direction:column;gap:6px;pointer-events:none;opacity:0;transition:opacity .18s,transform .18s;box-shadow:0 10px 30px rgba(0,0,0,.7);z-index:200;min-width:130px;white-space:nowrap}
+.artist-overflow:hover .artist-tooltip{opacity:1;transform:translateX(-50%) scale(1)}
+.artist-tooltip::after{content:"";position:absolute;top:100%;left:50%;transform:translateX(-50%);border:7px solid transparent;border-top-color:#35354a}
+.artist-tooltip::before{content:"";position:absolute;top:calc(100% + 1px);left:50%;transform:translateX(-50%);border:6px solid transparent;border-top-color:#1a1a28;z-index:1}
+.artist-tooltip-row{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:500;color:#f4f4f8}
+.artist-tooltip-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
 </style>
 </head>
 <body>
@@ -576,6 +584,22 @@ function fullReset() { clearSave(); if(G.audio){G.audio.pause();G.audio=null;} l
 function newGame() { clearSave(); G.players=[]; G.gameTracks=[]; if(G.audio){G.audio.pause();G.audio=null;} goTo('home'); }
 
 // ═══════════════════════════════════════
+// ARTIST BADGE HELPER
+// ═══════════════════════════════════════
+function buildArtistBadgeHTML(g) {
+  if (!g.isArtist || !g.artistList || g.artistList.length <= 2) {
+    return g.emoji + ' ' + g.label;
+  }
+  const visible = g.artistList.slice(0, 2).join(', ');
+  const hidden = g.artistList.slice(2);
+  const dots = hidden.map((a,i) => {
+    const col = ['#ff4560','#ffb300','#00e096','#4da6ff','#b96fff','#ff8c00'][i % 6];
+    return `<div class="artist-tooltip-row"><div class="artist-tooltip-dot" style="background:${col}"></div>${esc(a)}</div>`;
+  }).join('');
+  return `${g.emoji} ${esc(visible)} <span class="artist-overflow" style="color:${g.color}">+${hidden.length}<div class="artist-tooltip">${dots}</div></span>`;
+}
+
+// ═══════════════════════════════════════
 // SETUP
 // ═══════════════════════════════════════
 function initSetup() {
@@ -583,11 +607,7 @@ function initSetup() {
   if (g) {
     const badge = document.getElementById('setup-genre-badge');
     badge.style.cssText = `background:${g.bg};border-color:${g.color};color:${g.color};display:inline-flex;align-items:center;gap:8px;padding:9px 14px;border-radius:12px;border:2px solid;font-size:13px;font-weight:600;width:fit-content`;
-    badge.textContent = g.emoji + ' ' + g.label;
-    if (g.isArtist && g.artistList && g.artistList.length > 2) {
-      badge.title = g.artistList.join(', ');
-      badge.style.cursor = 'help';
-    }
+    badge.innerHTML = buildArtistBadgeHTML(g);
     document.getElementById('add-btn-el').style.background = g.color;
     document.querySelectorAll('.num-btn').forEach(el => { el.style.borderColor = g.color; el.style.color = g.color; });
     document.querySelectorAll('.num-val').forEach(el => { el.style.color = g.color; });
@@ -892,15 +912,9 @@ function initSpin() {
   if (g) {
     banner.style.cssText = `background:${g.bg};border-color:${g.color};color:${g.color};display:flex;align-items:center;gap:8px;padding:8px 14px;border-radius:12px;border:2px solid;font-size:13px;font-weight:600`;
     // Truncate long labels (multi-artist) and show tooltip
-    const fullLabel = g.emoji + ' ' + (g.isArtist && g.artistList ? g.artistList.join(', ') : g.label);
-    const shortLabel = g.label.length > 30 ? g.label.substring(0, 28) + '...' : g.label;
-    banner.textContent = g.emoji + ' ' + shortLabel;
-    banner.title = fullLabel;
-    banner.style.cursor = g.label.length > 30 ? 'help' : '';
+    banner.innerHTML = buildArtistBadgeHTML(g);
     banner.style.maxWidth = 'min(88vw, 340px)';
-    banner.style.overflow = 'hidden';
-    banner.style.textOverflow = 'ellipsis';
-    banner.style.whiteSpace = 'nowrap';
+    banner.style.overflow = 'visible';
     document.getElementById('spin-btn').style.background = `linear-gradient(130deg,${g.color},${g.color}99)`;
   }
   drawWheel(wAngle);
