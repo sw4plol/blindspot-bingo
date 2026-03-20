@@ -10,92 +10,40 @@ export default async function handler(req, res) {
     const { track, artist, mode } = req.body;
     if (!artist) return res.status(400).json({ error: 'Missing artist' });
 
-    // --- ANNÉE : MusicBrainz d'abord, Groq en fallback ---
-    if (!mode && track && track !== '__members__') {
-      // 1. Essayer MusicBrainz
-      try {
-        const q = encodeURIComponent(`recording:"${track}" AND artistname:"${artist}"`);
-        const mbRes = await fetch(`https://musicbrainz.org/ws/2/recording/?query=${q}&limit=5&fmt=json`, {
-          headers: { 'User-Agent': 'BlindspotBingo/1.0 (contact@blindspot.app)' }
-        });
-        const mbData = await mbRes.json();
-        const recordings = mbData.recordings || [];
+    let prompt;
+    let max_tokens = 10;
 
-        // Prendre le first-release-date du recording avec le meilleur score et titre le plus proche
-        let bestYear = null;
-        const trackLower = track.toLowerCase();
-        // Trier par similarité du titre d'abord, puis score
-        const sorted = recordings
-          .filter(r => r.score >= 60)
-          .sort((a, b) => {
-            const aExact = a.title.toLowerCase() === trackLower ? 1 : 0;
-            const bExact = b.title.toLowerCase() === trackLower ? 1 : 0;
-            if (aExact !== bExact) return bExact - aExact;
-            return b.score - a.score;
-          });
-        for (const rec of sorted) {
-          const date = rec['first-release-date'] || rec.releases?.[0]?.date || '';
-          const y = date.substring(0, 4);
-          if (y.match(/^\d{4}$/) && y > '1900') { bestYear = y; break; }
-        }
-
-        
-        if (bestYear) return res.status(200).json({ year: bestYear, source: 'musicbrainz' });
-      } catch(e) {
-        
-      }
-
-      // 2. Fallback Groq si MusicBrainz ne trouve rien
-      const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + process.env.GROQ_API_KEY },
-        body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',
-          max_tokens: 10,
-          temperature: 0,
-          messages: [{ role: 'user', content: `You are a music metadata expert. What year was "${track}" by ${artist} first officially released (not remasters or compilations)? Reply ONLY with the 4-digit year or UNKNOWN.` }]
-        })
-      });
-      const groqData = await groqRes.json();
-      const text = groqData.choices?.[0]?.message?.content?.trim() || '';
-      const year = text === 'UNKNOWN' ? null : (text.match(/\d{4}/)?.[0] || null);
-      return res.status(200).json({ year, source: 'groq' });
-    }
-
-    // --- MEMBRES ---
-    if (track === '__members__') {
-      const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + process.env.GROQ_API_KEY },
-        body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',
-          max_tokens: 10,
-          temperature: 0,
-          messages: [{ role: 'user', content: `You are a music historian. How many official members does "${artist}" have? Solo = 1. Return ONLY a number or UNKNOWN.` }]
-        })
-      });
-      const groqData = await groqRes.json();
-      const text = groqData.choices?.[0]?.message?.content?.trim() || '';
-      const year = text === 'UNKNOWN' ? null : (text.match(/\d+/)?.[0] || null);
-      return res.status(200).json({ year });
-    }
-
-    // --- FUNFACT ---
     if (mode === 'funfact') {
-      const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + process.env.GROQ_API_KEY },
-        body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',
-          max_tokens: 400,
-          temperature: 0.6,
-          messages: [{ role: 'user', content: `You are a music trivia expert. Generate ONE multiple choice question about "${track}" by ${artist}.
-RULES: NEVER ask about album or release year. NEVER ask about the name of the artist or the title of the song. Only use facts you are 100% certain about. Question types: chart positions, collaborators, samples, awards, producers, music video, certifications, stories behind the song.
-Return ONLY this JSON, no markdown, all text in French: {"question":"...","choices":["A","B","C","D"],"answer":0}` }]
-        })
-      });
-      const groqData = await groqRes.json();
-      const text = groqData.choices?.[0]?.message?.content?.trim() || '';
+      max_tokens = 400;
+      prompt = `You are a music trivia expert. Generate ONE multiple choice question about "${track}" by ${artist}.
+RULES: NEVER ask about album, release year, the name of the artist or the title of the song. Only use facts you are 100% certain about. Question types: chart positions, collaborators, samples, awards, producers, music video, certifications, stories behind the song.
+Return ONLY this JSON, no markdown, all text in French: {"question":"...","choices":["A","B","C","D"],"answer":0}`;
+
+    } else if (track === '__members__') {
+      prompt = `How many official members does "${artist}" have? Solo = 1. Return ONLY a number or UNKNOWN. No text, no explanation.`;
+
+    } else {
+      prompt = `What year was "${track}" by ${artist} first officially released? Prioritize the original release, not remasters or compilations. Reply ONLY with the 4-digit year or UNKNOWN.`;
+    }
+
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': process.env.ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    const data = await response.json();
+    const text = data.content?.[0]?.text?.trim() || '';
+
+    if (mode === 'funfact') {
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         try {
@@ -108,7 +56,8 @@ Return ONLY this JSON, no markdown, all text in French: {"question":"...","choic
       return res.status(200).json({ question: null });
     }
 
-    res.status(400).json({ error: 'Unknown mode' });
+    const year = text === 'UNKNOWN' ? null : (text.match(/\d+/)?.[0] || null);
+    res.status(200).json({ year });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
