@@ -20,6 +20,7 @@ export default async function handler(req, res) {
         });
         const mbData = await mbRes.json();
         const recordings = mbData.recordings || [];
+        console.log('MB response score0:', recordings[0]?.score, 'title:', recordings[0]?.title);
 
         let bestYear = null;
         for (const rec of recordings) {
@@ -39,6 +40,7 @@ export default async function handler(req, res) {
           }
         }
 
+        console.log('MB bestYear:', bestYear, 'recordings count:', recordings.length);
         if (bestYear) return res.status(200).json({ year: bestYear, source: 'musicbrainz' });
       } catch(e) {
         console.log('MusicBrainz failed:', e.message);
