@@ -17,12 +17,12 @@ export default async function handler(req, res) {
 Return ONLY a valid JSON object with this exact format, no explanation, no markdown:
 {"question":"...","choices":["A","B","C","D"],"answer":0}
 Where "answer" is the index (0-3) of the correct choice in the "choices" array.
-The question should be interesting and specific (album name, chart position, collaborator, inspiration, record, anecdote).
-Make the 3 wrong answers plausible but clearly wrong. Be precise and accurate.`;
+The question should be interesting and specific (album name, collaborator, inspiration, record, anecdote). 
+Make the 3 wrong answers plausible but clearly wrong. Be precise and accurate. Make no mistakes in spellings and informations. Don't hesitate to double check your own answer so you know you truly have the right one.`;
     } else if (track === '__members__') {
-      prompt = `How many members does the music artist or band "${artist}" have? If it's a solo artist, reply "1". Reply with only a single number, nothing else. Be as precise as possible, make no mistakes.`;
+      prompt = `How many members does the music artist or band "${artist}" have? If it's a solo artist, reply "1". Reply with only a single number, nothing else. Be as precise as possible, make no mistakes. Don't hesitate to double check your own answer so you know you truly have the right one.`;
     } else {
-      prompt = `What year was "${track}" by ${artist} first released as a single or on an album? Ignore remasters, live versions, and compilations. Reply with only the 4-digit year, nothing else. Be as precise as possible, make no mistakes.`;
+      prompt = `What year was "${track}" by ${artist} first released as a single or on an album? Ignore remasters, live versions, and compilations. Reply with only the 4-digit year, nothing else. Be as precise as possible, make no mistakes. Don't hesitate to double check your own answer so you know you truly have the right one.`;
     }
 
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
