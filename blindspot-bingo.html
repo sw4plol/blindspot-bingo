@@ -959,23 +959,8 @@ function drawWheel(rot) {
   ctx.fillStyle='#09090b'; ctx.fill(); ctx.strokeStyle='#1e1e2a'; ctx.lineWidth=3; ctx.stroke();
 }
 
-function playClick(vol=0.08) {
-  try {
-    // Use a fresh throwaway context for clicks to avoid interfering with music
-    const ac = new (window.AudioContext||window.webkitAudioContext)();
-    const buf = ac.createBuffer(1,512,ac.sampleRate);
-    const d = buf.getChannelData(0);
-    for(let i=0;i<512;i++) d[i]=(Math.random()*2-1)*Math.exp(-i/80);
-    const src = ac.createBufferSource();
-    src.buffer = buf;
-    const g = ac.createGain(); g.gain.value = vol;
-    src.connect(g); g.connect(ac.destination);
-    src.start();
-    src.onended = () => ac.close(); // close immediately after playing
-  } catch(e) {}
-}
 
-let lastSeg=-1;
+
 function doSpin() {
   if (spinning) return;
   spinning = true;
@@ -986,15 +971,11 @@ function doSpin() {
   const target=wAngle+extra, dur=2800+Math.random()*1200;
   const t0=performance.now(), a0=wAngle;
   const ease=t=>1-Math.pow(1-t,4);
-  lastSeg=-1;
   function frame(now) {
     const p=Math.min((now-t0)/dur,1);
     wAngle=a0+(target-a0)*ease(p);
     drawWheel(wAngle);
-    // Click sound as wheel passes each segment
-    const sl2=Math.PI*2/GUESSES.length;
-    const seg=Math.floor(((wAngle%(Math.PI*2))/(Math.PI*2))*GUESSES.length);
-    if(seg!==lastSeg){ const speed=1-p; if(speed>0.05) playClick(0.04+speed*0.06); lastSeg=seg; }
+
     if(p<1) requestAnimationFrame(frame);
     else { wAngle%=Math.PI*2; spinning=false; onSpinEnd(); }
   }
