@@ -192,6 +192,12 @@ canvas#wcanvas{border-radius:50%;box-shadow:0 0 0 3px #1e1e2a,0 0 40px rgba(0,0,
 .artist-tooltip::before{content:"";position:absolute;top:calc(100% + 1px);left:50%;transform:translateX(-50%);border:6px solid transparent;border-top-color:#1a1a28;z-index:1}
 .artist-tooltip-row{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:500;color:#f4f4f8}
 .artist-tooltip-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.ff-question{font-size:13px;font-weight:600;color:var(--text);text-align:left;line-height:1.5}
+.ff-choice{width:100%;padding:10px 13px;border-radius:11px;border:1.5px solid var(--border);background:var(--surf);color:var(--text);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;cursor:pointer;text-align:left;transition:all .15s}
+.ff-choice:active{transform:scale(.97)}
+.ff-choice.correct{border-color:#00e096;background:rgba(0,224,150,.15);color:#00e096}
+.ff-choice.wrong{border-color:#ff4560;background:rgba(255,69,96,.1);color:#ff4560;opacity:.6}
+.ff-result{font-size:12px;text-align:center;padding:6px;border-radius:8px;font-weight:600}
 </style>
 </head>
 <body>
@@ -210,7 +216,7 @@ canvas#wcanvas{border-radius:50%;box-shadow:0 0 0 3px #1e1e2a,0 0 40px rgba(0,0,
     <button class="btn btn-ghost" onclick="goTo('leaderboard')">🏆 Classement</button>
     <button class="btn btn-ghost btn-sm" onclick="fullReset()" style="max-width:320px;opacity:.5">⟳ Réinitialiser</button>
   </div>
-  <div style="position:absolute;bottom:14px;left:16px;font-size:10px;color:rgba(255,255,255,.25);letter-spacing:1px;font-family:'DM Sans',sans-serif">v0.1232</div>
+  <div style="position:absolute;bottom:14px;left:16px;font-size:10px;color:rgba(255,255,255,.25);letter-spacing:1px;font-family:'DM Sans',sans-serif">v0.1240</div>
 </div>
 
 <!-- GENRE SELECT -->
@@ -404,6 +410,8 @@ canvas#wcanvas{border-radius:50%;box-shadow:0 0 0 3px #1e1e2a,0 0 40px rgba(0,0,
   <div class="modal" onclick="event.stopPropagation()">
     <div class="modal-title" id="rev-modal-title">🎤 La chanson etait...</div>
     <div id="rev-content"></div>
+    <div id="funfact-wrap" style="display:none;flex-direction:column;gap:8px;width:100%"></div>
+    <button class="btn btn-ghost btn-sm" id="funfact-btn" onclick="loadFunFact()" style="opacity:.8">🎲 Fun Fact</button>
     <button class="btn btn-fire" onclick="closeReveal()">Fermer</button>
   </div>
 </div>
@@ -1123,6 +1131,71 @@ function setVol(v) {
 }
 function fmt(s){ const m=Math.floor(s/60),sc=Math.floor(s%60); return m+':'+(sc<10?'0':'')+sc; }
 
+
+
+async function loadFunFact() {
+  const btn = document.getElementById('funfact-btn');
+  const wrap = document.getElementById('funfact-wrap');
+  if (!btn || !wrap) return;
+  btn.textContent = '⏳ Génération...';
+  btn.disabled = true;
+
+  try {
+    const response = await fetch('https://blindspot-bingo.vercel.app/api/claude', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        track: window._revTrack?.name || '',
+        artist: window._revTrack?.artist || '',
+        mode: 'funfact'
+      })
+    });
+    const data = await response.json();
+    if (data.question && data.choices && data.answer !== undefined) {
+      showFunFact(data.question, data.choices, data.answer);
+      btn.style.display = 'none';
+    } else {
+      btn.textContent = '🎲 Fun Fact';
+      btn.disabled = false;
+      showToast('Impossible de générer un fun fact');
+    }
+  } catch(e) {
+    btn.textContent = '🎲 Fun Fact';
+    btn.disabled = false;
+  }
+}
+
+function showFunFact(question, choices, answerIdx) {
+  const wrap = document.getElementById('funfact-wrap');
+  wrap.style.display = 'flex';
+  wrap.innerHTML = `<div class="ff-question">🎲 ${question}</div>`;
+  choices.forEach((ch, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'ff-choice';
+    btn.textContent = ch;
+    btn.onclick = () => {
+      // Désactiver tous les boutons
+      wrap.querySelectorAll('.ff-choice').forEach(b => b.onclick = null);
+      if (i === answerIdx) {
+        btn.classList.add('correct');
+        const res = document.createElement('div');
+        res.className = 'ff-result';
+        res.style.cssText = 'color:#00e096;background:rgba(0,224,150,.1)';
+        res.textContent = '✅ Bonne réponse ! Distribue 3 gorgées 🍺';
+        wrap.appendChild(res);
+      } else {
+        btn.classList.add('wrong');
+        wrap.querySelectorAll('.ff-choice')[answerIdx].classList.add('correct');
+        const res = document.createElement('div');
+        res.className = 'ff-result';
+        res.style.cssText = 'color:#ff4560;background:rgba(255,69,96,.1)';
+        res.textContent = '❌ Mauvaise réponse ! Bois 2 gorgées 🍺';
+        wrap.appendChild(res);
+      }
+    };
+    wrap.appendChild(btn);
+  });
+}
 
 async function askAIYear() {
   const trackName = window._revTrack?.name || "";
