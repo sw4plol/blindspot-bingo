@@ -1164,8 +1164,9 @@ async function loadFunFact() {
     const data = await response.json();
     if (data.question && data.choices && data.answer !== undefined) {
       showFunFact(data.question, data.choices, data.answer);
-      btn.style.display = 'none';
+      btn.textContent = '🎲 Fun Fact ✓';
       btn.dataset.locked = '1';
+      btn.onclick = () => { const fw = document.getElementById('funfact-wrap'); if(fw) fw.style.display = fw.style.display === 'none' ? 'flex' : 'none'; };
     } else {
       btn.textContent = '🎲 Fun Fact';
       btn.disabled = false;
