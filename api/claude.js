@@ -14,7 +14,8 @@ export default async function handler(req, res) {
     if (!mode && track && track !== '__members__') {
       // 1. Essayer MusicBrainz
       try {
-        const q = encodeURIComponent(`recording:"${track}" AND artist:"${artist}"`);
+        const q = encodeURIComponent(`${track} ${artist}`);
+        console.log('Calling MusicBrainz...');
         const mbRes = await fetch(`https://musicbrainz.org/ws/2/recording/?query=${q}&limit=10&fmt=json`, {
           headers: { 'User-Agent': 'BlindspotBingo/1.0 (contact@blindspot.app)' }
         });
@@ -43,7 +44,7 @@ export default async function handler(req, res) {
         console.log('MB bestYear:', bestYear, 'recordings count:', recordings.length);
         if (bestYear) return res.status(200).json({ year: bestYear, source: 'musicbrainz' });
       } catch(e) {
-        console.log('MusicBrainz failed:', e.message);
+        console.log('MusicBrainz exception:', e.message);
       }
 
       // 2. Fallback Groq si MusicBrainz ne trouve rien
