@@ -7,11 +7,19 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
-    const { track, artist } = req.body;
+    const { track, artist, mode } = req.body;
     if (!artist) return res.status(400).json({ error: 'Missing artist' });
 
     let prompt;
-    if (track === '__members__') {
+
+    if (mode === 'funfact') {
+      prompt = `Generate a fun fact quiz question about the song "${track}" by ${artist}.
+Return ONLY a valid JSON object with this exact format, no explanation, no markdown:
+{"question":"...","choices":["A","B","C","D"],"answer":0}
+Where "answer" is the index (0-3) of the correct choice in the "choices" array.
+The question should be interesting and specific (album name, chart position, collaborator, inspiration, record, anecdote).
+Make the 3 wrong answers plausible but clearly wrong. Be precise and accurate.`;
+    } else if (track === '__members__') {
       prompt = `How many members does the music artist or band "${artist}" have? If it's a solo artist, reply "1". Reply with only a single number, nothing else. Be as precise as possible, make no mistakes.`;
     } else {
       prompt = `What year was "${track}" by ${artist} first released as a single or on an album? Ignore remasters, live versions, and compilations. Reply with only the 4-digit year, nothing else. Be as precise as possible, make no mistakes.`;
@@ -25,14 +33,25 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         model: 'llama-3.3-70b-versatile',
-        max_tokens: 10,
-        temperature: 0,
+        max_tokens: mode === 'funfact' ? 300 : 10,
+        temperature: mode === 'funfact' ? 0.7 : 0,
         messages: [{ role: 'user', content: prompt }]
       })
     });
 
     const data = await response.json();
     const text = data.choices?.[0]?.message?.content?.trim() || '';
+
+    if (mode === 'funfact') {
+      try {
+        const clean = text.replace(/```json|```/g, '').trim();
+        const parsed = JSON.parse(clean);
+        return res.status(200).json(parsed);
+      } catch(e) {
+        return res.status(200).json({ question: null });
+      }
+    }
+
     const year = text.match(/\d+/)?.[0] || null;
     res.status(200).json({ year });
   } catch (e) {
