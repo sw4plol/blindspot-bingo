@@ -1167,7 +1167,7 @@ function revealTrack() {
      `<div class="rev-track">${esc(t.name)}</div>` +
      `<div class="rev-artist">${esc(artist)}</div>` +
      `<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:6px">` +
-       `<div id="year-ai-btn" onclick="askAIYear(t.name, '${esc(artist)}')" style="color:var(--g2);font-size:12px;font-weight:600;background:var(--surf);padding:4px 10px;border-radius:20px;cursor:pointer;transition:background .2s" title="Demander à l'IA">📅 ${year}</div>` +
+       `<div id="year-ai-btn" onclick="askAIYear(${JSON.stringify(t.name)}, ${JSON.stringify(artist)})" style="color:var(--g2);font-size:12px;font-weight:600;background:var(--surf);padding:4px 10px;border-radius:20px;cursor:pointer;transition:background .2s" title="Cliquer pour chercher l'année">📅 ${year}</div>` +
        `<div style="color:#ff4560;font-size:12px;font-weight:600;background:var(--surf);padding:4px 10px;border-radius:20px">🔢 ${wordCount} mot${wordCount>1?"s":""}</div>` +
       `</div>`;
   document.getElementById("rev-overlay").classList.add("show");
