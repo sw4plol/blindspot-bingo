@@ -209,7 +209,7 @@ canvas#wcanvas{border-radius:50%;box-shadow:0 0 0 3px #1e1e2a,0 0 40px rgba(0,0,
     <button class="btn btn-ghost" onclick="goTo('leaderboard')">🏆 Classement</button>
     <button class="btn btn-ghost btn-sm" onclick="fullReset()" style="max-width:320px;opacity:.5">⟳ Réinitialiser</button>
   </div>
-  <div style="position:absolute;bottom:14px;left:16px;font-size:10px;color:rgba(255,255,255,.25);letter-spacing:1px;font-family:'DM Sans',sans-serif">v0.1222</div>
+  <div style="position:absolute;bottom:14px;left:16px;font-size:10px;color:rgba(255,255,255,.25);letter-spacing:1px;font-family:'DM Sans',sans-serif">v0.1230</div>
 </div>
 
 <!-- GENRE SELECT -->
@@ -1127,38 +1127,41 @@ async function askAIYear() {
   const trackName = window._revTrack?.name || "";
   const artistName = window._revTrack?.artist || "";
   const btn = document.getElementById('year-ai-btn');
-  if (!btn) return;
+  if (!btn || btn.dataset.locked) return;
   btn.textContent = '⏳';
   btn.style.pointerEvents = 'none';
   try {
-    const response = await fetch('https://blindspot-bingo.vercel.app/api/claude', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ track: trackName, artist: artistName })
-    });
+    const query = encodeURIComponent(trackName + ' ' + artistName);
+    const response = await fetch('https://musicbrainz.org/ws/2/recording/?query=' + query + '&limit=3&fmt=json');
     const data = await response.json();
-    console.log('claude response:', JSON.stringify(data), 'debug:', data.debug);
-    const year = data.year;
+    // Chercher la date la plus ancienne parmi les résultats
+    let year = null;
+    for (const rec of (data.recordings || [])) {
+      const rd = rec['first-release-date'] || rec.releases?.[0]?.date || '';
+      const y = rd.substring(0,4);
+      if (y.match(/^\d{4}$/) && (!year || parseInt(y) < parseInt(year))) year = y;
+    }
     if (year) {
       btn.textContent = '📅 ' + year;
       btn.style.background = 'rgba(255,179,0,.2)';
       btn.style.color = 'var(--g2)';
-      // Sauvegarder sur le track courant
+      btn.dataset.locked = '1';
       const t = G.gameTracks[G.currentTrackIdx];
       if (t) t.year = year;
     } else {
       btn.textContent = '📅 ?';
+      btn.style.pointerEvents = 'auto';
     }
   } catch(e) {
     btn.textContent = '📅 ✗';
+    btn.style.pointerEvents = 'auto';
   }
-  btn.style.pointerEvents = 'auto';
 }
 
 
 async function askAIMembers() {
   const btn = document.getElementById('members-ai-btn');
-  if (!btn) return;
+  if (!btn || btn.dataset.locked) return;
   btn.textContent = '⏳';
   btn.style.pointerEvents = 'none';
   try {
@@ -1173,13 +1176,15 @@ async function askAIMembers() {
       btn.textContent = '👥 ' + data.year;
       btn.style.background = 'rgba(0,224,150,.15)';
       btn.style.color = 'var(--g3)';
+      btn.dataset.locked = '1';
     } else {
-      btn.textContent = '👥 Solo';
+      btn.textContent = '👥 ?';
+      btn.style.pointerEvents = 'auto';
     }
   } catch(e) {
     btn.textContent = '👥 ?';
+    btn.style.pointerEvents = 'auto';
   }
-  btn.style.pointerEvents = 'auto';
 }
 
 function revealTrack() {
