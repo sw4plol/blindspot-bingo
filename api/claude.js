@@ -10,15 +10,14 @@ export default async function handler(req, res) {
     const { track, artist } = req.body;
     if (!track || !artist) return res.status(400).json({ error: 'Missing track or artist' });
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': process.env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01'
+        'Authorization': 'Bearer ' + process.env.GROQ_API_KEY
       },
       body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
+        model: 'llama-3.1-8b-instant',
         max_tokens: 10,
         messages: [{
           role: 'user',
@@ -28,9 +27,7 @@ export default async function handler(req, res) {
     });
 
     const data = await response.json();
-    console.log('Anthropic raw response:', JSON.stringify(data));
-
-    const text = data.content?.[0]?.text?.trim() || '';
+    const text = data.choices?.[0]?.message?.content?.trim() || '';
     const year = text.match(/\d{4}/)?.[0] || null;
     res.status(200).json({ year, debug: text });
   } catch (e) {
