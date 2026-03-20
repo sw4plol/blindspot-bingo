@@ -89,7 +89,7 @@ export default async function handler(req, res) {
           max_tokens: 400,
           temperature: 0.6,
           messages: [{ role: 'user', content: `You are a music trivia expert. Generate ONE multiple choice question about "${track}" by ${artist}.
-RULES: NEVER ask about album or release year. Only use facts you are 100% certain about. Question types: chart positions, collaborators, samples, awards, producers, music video, certifications, stories behind the song.
+RULES: NEVER ask about album or release year. NEVER ask about the name of the artist or the title of the song. Only use facts you are 100% certain about. Question types: chart positions, collaborators, samples, awards, producers, music video, certifications, stories behind the song.
 Return ONLY this JSON, no markdown, all text in French: {"question":"...","choices":["A","B","C","D"],"answer":0}` }]
         })
       });
