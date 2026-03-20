@@ -753,16 +753,20 @@ function isLiveTrack(title) {
 }
 
 function parseDeezerTrack(t) {
+  // Deezer peut mettre la date sur le track OU sur l'album
+  const rd = t.release_date || t.album?.release_date || '';
+  const year = rd ? rd.substring(0,4) : null;
+  if (!year) console.warn('No year for track:', t.title, '| t.release_date:', t.release_date, '| t.album:', t.album);
   return {
     id: t.id,
     name: t.title,
     artists: [{ name: t.artist?.name || '?' }],
     preview_url: t.preview,
-    year: (t.release_date || t.album?.release_date) ? (t.release_date || t.album?.release_date).substring(0,4) : null,
+    year: year,
     album: {
       name: t.album?.title || '',
       images: [{ url: t.album?.cover_medium || '' }],
-      release_date: t.release_date || ''
+      release_date: rd
     }
   };
 }
