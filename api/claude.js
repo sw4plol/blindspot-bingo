@@ -20,9 +20,9 @@ Where "answer" is the index (0-3) of the correct choice in the "choices" array.
 The question should be interesting and specific (album name, collaborator, inspiration, record, anecdote). 
 Make the 3 wrong answers plausible but clearly wrong. Be precise and accurate. Make no mistakes in spellings and informations. Don't hesitate to double check your own answer so you know you truly have the right one. If the artist is less known, make sure you have enough informations for better questions without mistakes.`;
     } else if (track === '__members__') {
-      prompt = `How many members does the music artist or band "${artist}" have? If it's a solo artist, reply "1". Reply with only a single number, nothing else. Be as precise as possible, make no mistakes. Don't hesitate to double check your own answer so you know you truly have the right one. If the artist is less known, make sure you have enough informations for better questions without mistakes. `;
+      prompt = `How many members does the music artist or band "${artist}" have? If it's a solo artist, reply "1". Reply with only a single number, nothing else. Be as precise as possible, make no mistakes. Don't hesitate to double check your own answer so you know you truly have the right one. If the artist is less known, make sure you have enough informations for the right answer. `;
     } else {
-      prompt = `What year was "${track}" by ${artist} first released as a single or on an album? Ignore remasters, live versions, and compilations. Reply with only the 4-digit year, nothing else. Be as precise as possible, make no mistakes. Don't hesitate to double check your own answer so you know you truly have the right one. If the artist is less known, make sure you have enough informations for better questions without mistakes.`;
+      prompt = `What year was "${track}" by ${artist} first released as a single or on an album? Ignore remasters, live versions, and compilations. Reply with only the 4-digit year, nothing else. Be as precise as possible, make no mistakes. Don't hesitate to double check your own answer so you know you truly have the right one. If the artist is less known, make sure you have enough informations for the right answer.`;
     }
 
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
