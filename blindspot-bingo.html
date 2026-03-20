@@ -319,7 +319,7 @@ canvas#wcanvas{border-radius:50%;box-shadow:0 0 0 3px #1e1e2a,0 0 40px rgba(0,0,
       </div>
       <div class="vol-row">
         <span style="font-size:15px">🔈</span>
-        <input type="range" min="0" max="100" value="80" oninput="setVol(this.value)">
+        <input type="range" min="0" max="100" value="80" id="vol-slider" oninput="setVol(this.value)">
         <span style="font-size:15px">🔊</span>
       </div>
     </div>
@@ -1125,6 +1125,7 @@ function seekClick(e) {
 }
 function setVol(v) {
   if (G.audio) G.audio.volume = v/100;
+  try { localStorage.setItem('blindspot_vol', v); } catch(e) {}
 }
 function fmt(s){ const m=Math.floor(s/60),sc=Math.floor(s%60); return m+':'+(sc<10?'0':'')+sc; }
 
@@ -1521,6 +1522,17 @@ function showToast(msg){ const t=document.getElementById('toast'); t.textContent
   try {
     const raw = localStorage.getItem(SAVE_KEY);
     if (raw) restoreState();
+  } catch(e) {}
+})();
+
+// Restore volume on page load
+(function() {
+  try {
+    const v = localStorage.getItem('blindspot_vol');
+    if (v !== null) {
+      const slider = document.getElementById('vol-slider');
+      if (slider) slider.value = v;
+    }
   } catch(e) {}
 })();
 </script>
