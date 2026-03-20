@@ -882,23 +882,6 @@ async function startGame() {
 
     if (tracks.length < 5) { ls.style.display='none'; showToast('Pas assez de titres (' + tracks.length + ')'); return; }
 
-    // Fetch missing years via album API (Deezer playlists don't include release_date on tracks)
-    msg.textContent = 'Récupération des années...';
-    ls.style.display = 'flex';
-    const missingAlbumIds = [...new Set(tracks.filter(t => !t.year && t.album?.id).map(t => t.album.id))];
-    const albumYearMap = {};
-    for (let i = 0; i < missingAlbumIds.length; i += 10) {
-      const batch = missingAlbumIds.slice(i, i + 10);
-      await Promise.all(batch.map(async (albumId) => {
-        try {
-          const data = await deezerGet('album/' + albumId);
-          if (data?.release_date) albumYearMap[albumId] = data.release_date.substring(0, 4);
-        } catch(e) {}
-      }));
-    }
-    tracks.forEach(t => { if (!t.year && t.album?.id && albumYearMap[t.album.id]) t.year = albumYearMap[t.album.id]; });
-    ls.style.display = 'none';
-
     G.gameTracks = shuffle([...tracks]); // Keep ALL tracks, always shuffled
     G.playedIds = new Set(); // Track played songs to avoid repeats
     G.currentTrackIdx = 0; G.turnNum = 1; G.currentGuess = null; G.history = [];
