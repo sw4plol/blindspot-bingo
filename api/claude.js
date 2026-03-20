@@ -11,20 +11,29 @@ export default async function handler(req, res) {
     if (!artist) return res.status(400).json({ error: 'Missing artist' });
 
     let prompt;
+    let model = 'llama-3.3-70b-versatile';
+    let max_tokens = 10;
+    let temperature = 0;
 
     if (mode === 'funfact') {
-      prompt = `You are a music trivia expert.
-Task: Generate a fun fact quiz question about the song "${track}" by ${artist}.
-Instructions:
-1. The question must be specific and interesting (album name, chart position, collaborator, inspiration, record, anecdote).
-2. Make the 3 wrong answers plausible but clearly wrong.
-3. Be precise and accurate. Make no mistakes in spellings and informations.
-4. If the artist is less known, make sure you have enough information for better questions without mistakes.
-5. Don't hesitate to double check your own answer so you know you truly have the right one.
-Output rules:
-- Return ONLY a valid JSON object with this exact format, no explanation, no markdown:
+      model = 'deepseek-r1-distill-llama-70b';
+      max_tokens = 500;
+      temperature = 0.5;
+      prompt = `You are a music trivia expert. Generate ONE multiple choice question about "${track}" by ${artist}.
+
+STRICT RULES:
+- NEVER ask about which album a song is on
+- NEVER ask about release year
+- NEVER invent facts — only use facts you are 100% certain about
+- If you are not confident about a fact, choose a different angle
+- Question types allowed: music video details, chart positions, collaborators, samples used, awards won, interesting stories behind the song, record labels, producers, inspired by events, certifications (gold/platinum)
+- All 4 choices must be plausible
+- Make no spelling mistakes
+
+Return ONLY this exact JSON, no thinking, no explanation, no markdown:
 {"question":"...","choices":["A","B","C","D"],"answer":0}
-Where "answer" is the index (0-3) of the correct choice.`;
+
+"answer" = index (0-3) of the correct choice.`;
 
     } else if (track === '__members__') {
       prompt = `You are a music historian.
@@ -62,17 +71,19 @@ Artist: ${artist}`;
         'Authorization': 'Bearer ' + process.env.GROQ_API_KEY
       },
       body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
-        max_tokens: mode === 'funfact' ? 300 : 10,
-        temperature: mode === 'funfact' ? 0.7 : 0,
+        model,
+        max_tokens,
+        temperature,
         messages: [{ role: 'user', content: prompt }]
       })
     });
 
     const data = await response.json();
-    const text = data.choices?.[0]?.message?.content?.trim() || '';
+    let text = data.choices?.[0]?.message?.content?.trim() || '';
 
     if (mode === 'funfact') {
+      // Enlever le bloc <think>...</think> de deepseek
+      text = text.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
       try {
         const clean = text.replace(/```json|```/g, '').trim();
         const parsed = JSON.parse(clean);
