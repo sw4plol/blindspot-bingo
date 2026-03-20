@@ -216,7 +216,7 @@ canvas#wcanvas{border-radius:50%;box-shadow:0 0 0 3px #1e1e2a,0 0 40px rgba(0,0,
     <button class="btn btn-ghost" onclick="goTo('leaderboard')">🏆 Classement</button>
     <button class="btn btn-ghost btn-sm" onclick="fullReset()" style="max-width:320px;opacity:.5">⟳ Réinitialiser</button>
   </div>
-  <div style="position:absolute;bottom:14px;left:16px;font-size:10px;color:rgba(255,255,255,.25);letter-spacing:1px;font-family:'DM Sans',sans-serif">v0.1244</div>
+  <div style="position:absolute;bottom:14px;left:16px;font-size:10px;color:rgba(255,255,255,.25);letter-spacing:1px;font-family:'DM Sans',sans-serif">v0.1250</div>
 </div>
 
 <!-- GENRE SELECT -->
@@ -1147,7 +1147,7 @@ function fmt(s){ const m=Math.floor(s/60),sc=Math.floor(s%60); return m+':'+(sc<
 async function loadFunFact() {
   const btn = document.getElementById('funfact-btn');
   const wrap = document.getElementById('funfact-wrap');
-  if (!btn || !wrap) return;
+  if (!btn || !wrap || btn.dataset.locked) return;
   btn.textContent = '⏳ Génération...';
   btn.disabled = true;
 
@@ -1165,6 +1165,7 @@ async function loadFunFact() {
     if (data.question && data.choices && data.answer !== undefined) {
       showFunFact(data.question, data.choices, data.answer);
       btn.style.display = 'none';
+      btn.dataset.locked = '1';
     } else {
       btn.textContent = '🎲 Fun Fact';
       btn.disabled = false;
@@ -1250,7 +1251,7 @@ async function askAIMembers() {
     const response = await fetch('https://blindspot-bingo.vercel.app/api/claude', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ track: '__members__', artist: artist, year: window._revTrack?.year || null })
+      body: JSON.stringify({ track: '__members__', artist: artist })
     });
     const data = await response.json();
     if (data.year) {
