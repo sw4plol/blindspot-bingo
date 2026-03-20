@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎧</text></svg>">
 <title>BLINDSPOT</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Unbounded:wght@400;700;900&family=DM+Sans:wght@400;500;600&display=swap');
@@ -209,7 +210,7 @@ canvas#wcanvas{border-radius:50%;box-shadow:0 0 0 3px #1e1e2a,0 0 40px rgba(0,0,
     <button class="btn btn-ghost" onclick="goTo('leaderboard')">🏆 Classement</button>
     <button class="btn btn-ghost btn-sm" onclick="fullReset()" style="max-width:320px;opacity:.5">⟳ Réinitialiser</button>
   </div>
-  <div style="position:absolute;bottom:14px;left:16px;font-size:10px;color:rgba(255,255,255,.25);letter-spacing:1px;font-family:'DM Sans',sans-serif">v0.1230</div>
+  <div style="position:absolute;bottom:14px;left:16px;font-size:10px;color:rgba(255,255,255,.25);letter-spacing:1px;font-family:'DM Sans',sans-serif">v0.1232</div>
 </div>
 
 <!-- GENRE SELECT -->
@@ -1131,23 +1132,19 @@ async function askAIYear() {
   btn.textContent = '⏳';
   btn.style.pointerEvents = 'none';
   try {
-    const query = encodeURIComponent(trackName + ' ' + artistName);
-    const response = await fetch('https://musicbrainz.org/ws/2/recording/?query=' + query + '&limit=3&fmt=json');
+    const response = await fetch('https://blindspot-bingo.vercel.app/api/claude', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ track: trackName, artist: artistName })
+    });
     const data = await response.json();
-    // Chercher la date la plus ancienne parmi les résultats
-    let year = null;
-    for (const rec of (data.recordings || [])) {
-      const rd = rec['first-release-date'] || rec.releases?.[0]?.date || '';
-      const y = rd.substring(0,4);
-      if (y.match(/^\d{4}$/) && (!year || parseInt(y) < parseInt(year))) year = y;
-    }
-    if (year) {
-      btn.textContent = '📅 ' + year;
+    if (data.year) {
+      btn.textContent = '📅 ' + data.year;
       btn.style.background = 'rgba(255,179,0,.2)';
       btn.style.color = 'var(--g2)';
       btn.dataset.locked = '1';
       const t = G.gameTracks[G.currentTrackIdx];
-      if (t) t.year = year;
+      if (t) t.year = data.year;
     } else {
       btn.textContent = '📅 ?';
       btn.style.pointerEvents = 'auto';
