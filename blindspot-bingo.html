@@ -1123,20 +1123,15 @@ async function askAIYear(trackName, artistName) {
   btn.textContent = '⏳';
   btn.style.pointerEvents = 'none';
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 10,
-        messages: [{
-          role: 'user',
-          content: 'What year was the song "' + trackName + '" by ' + artistName + ' released? Reply with only the 4-digit year, nothing else.'
-        }]
-      })
+    // Search MusicBrainz (public API, no key needed)
+    const query = encodeURIComponent('"' + trackName + '" AND artist:"' + artistName + '"');
+    const response = await fetch('https://musicbrainz.org/ws/2/recording/?query=' + query + '&limit=1&fmt=json', {
+      headers: { 'User-Agent': 'BlindspotBingo/1.0' }
     });
     const data = await response.json();
-    const year = data.content?.[0]?.text?.trim().match(/\d{4}/)?.[0];
+    const recording = data.recordings?.[0];
+    const rd = recording?.['first-release-date'] || recording?.releases?.[0]?.date || '';
+    const year = rd.substring(0, 4).match(/\d{4}/)?.[0];
     if (year) {
       btn.textContent = '📅 ' + year;
       btn.style.background = 'rgba(255,179,0,.2)';
