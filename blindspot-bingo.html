@@ -901,9 +901,11 @@ let spinning=false, wAngle=0;
 try { const _s=JSON.parse(localStorage.getItem('blindspot_state')||'{}'); if(_s.wa) wAngle=_s.wa; } catch(e){}
 
 function initSpin() {
-  // Stop audio when arriving on spin screen (new turn)
-  if (G.audio) { G.audio.pause(); G.audio=null; }
-  clearInterval(G.progTimer); G.progTimer=null; G.isPlaying=false;
+  // Stop audio only if this is a fresh turn (not coming back from play-screen)
+  if (!G.hasSpun) {
+    if (G.audio) { G.audio.pause(); G.audio=null; }
+    clearInterval(G.progTimer); G.progTimer=null; G.isPlaying=false;
+  }
   const g = G.selectedGenre;
   document.getElementById('spin-num').textContent = G.turnNum;
 
