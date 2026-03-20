@@ -879,7 +879,7 @@ async function startGame() {
     if (tracks.length < 5) { ls.style.display='none'; showToast('Pas assez de titres (' + tracks.length + ')'); return; }
 
     G.gameTracks = shuffle([...tracks]); // Keep ALL tracks, always shuffled
-    G.playedIds = new Set(state.pi || []); // Track played songs to avoid repeats
+    G.playedIds = new Set(); // Track played songs to avoid repeats
     G.currentTrackIdx = 0; G.turnNum = 1; G.currentGuess = null; G.history = [];
     G.players.forEach(p => { p.card=genCard(); p.marked=new Array(25).fill(null); p.markedSongs={}; p.bingos=0; });
 
