@@ -209,7 +209,7 @@ canvas#wcanvas{border-radius:50%;box-shadow:0 0 0 3px #1e1e2a,0 0 40px rgba(0,0,
     <button class="btn btn-ghost" onclick="goTo('leaderboard')">🏆 Classement</button>
     <button class="btn btn-ghost btn-sm" onclick="fullReset()" style="max-width:320px;opacity:.5">⟳ Réinitialiser</button>
   </div>
-  <div style="position:absolute;bottom:14px;left:16px;font-size:10px;color:rgba(255,255,255,.25);letter-spacing:1px;font-family:'DM Sans',sans-serif">v0.1200</div>
+  <div style="position:absolute;bottom:14px;left:16px;font-size:10px;color:rgba(255,255,255,.25);letter-spacing:1px;font-family:'DM Sans',sans-serif">v0.1211</div>
 </div>
 
 <!-- GENRE SELECT -->
@@ -1129,7 +1129,7 @@ async function askAIYear() {
   btn.textContent = '⏳';
   btn.style.pointerEvents = 'none';
   try {
-    const response = await fetch('/api/claude', {
+    const response = await fetch('https://blindspot-bingo-ra1ou5sq6-sw4plols-projects.vercel.app/api/claude', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ track: trackName, artist: artistName })
