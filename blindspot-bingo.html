@@ -133,7 +133,7 @@ canvas#wcanvas{border-radius:50%;box-shadow:0 0 0 3px #1e1e2a,0 0 40px rgba(0,0,
 .bc-wrap{flex:1;display:flex;flex-direction:column;gap:6px;padding:8px 12px 10px;min-height:0;overflow:hidden}
 .bc-top{display:flex;align-items:center;gap:9px}
 .bc-name{font-family:'Unbounded',sans-serif;font-size:13px;font-weight:700;letter-spacing:-.3px;flex:1}
-.bc-pts{padding:3px 9px;border-radius:20px;font-weight:700;font-size:11px}
+
 .bc-legend{display:flex;gap:3px;flex-wrap:wrap;flex-shrink:0}
 .bcleg{display:flex;align-items:center;gap:2px;font-size:9px;padding:2px 6px;border-radius:20px;background:var(--surf);border:1px solid var(--border);color:var(--muted)}
 .bcdot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
@@ -169,7 +169,7 @@ canvas#wcanvas{border-radius:50%;box-shadow:0 0 0 3px #1e1e2a,0 0 40px rgba(0,0,
 .lb-info{flex:1}
 .lb-name{font-weight:600;font-size:14px}
 .lb-cats{font-size:10px;color:var(--muted);margin-top:2px}
-.lb-score{font-family:'Unbounded',sans-serif;font-size:20px}
+
 
 /* REVEAL MODAL */
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:50;display:flex;align-items:center;justify-content:center;padding:22px;opacity:0;pointer-events:none;transition:opacity .25s}
@@ -359,7 +359,6 @@ canvas#wcanvas{border-radius:50%;box-shadow:0 0 0 3px #1e1e2a,0 0 40px rgba(0,0,
   <div class="topbar" style="padding-bottom:0">
     <div class="back" onclick="goTo('player-select')">←</div>
     <div class="ptitle" id="bc-title"></div>
-    <div class="bc-pts" id="bc-pts">0 pts</div>
   </div>
   <div class="bc-wrap">
     <div class="bc-legend" id="bc-legend"></div>
@@ -643,7 +642,7 @@ function addPlayer() {
   const name = inp.value.trim();
   if (!name) return;
   if (G.players.length >= 8) { showToast('Max 8 joueurs'); return; }
-  G.players.push({ name, color:AV_COLORS[G.players.length%AV_COLORS.length], card:null, marked:[], score:0, bingos:0 });
+  G.players.push({ name, color:AV_COLORS[G.players.length%AV_COLORS.length], card:null, marked:[], bingos:0 });
   inp.value = ''; saveState(); renderPList();
 }
 function removePlayer(i) { G.players.splice(i,1); renderPList(); }
@@ -880,9 +879,9 @@ async function startGame() {
     if (tracks.length < 5) { ls.style.display='none'; showToast('Pas assez de titres (' + tracks.length + ')'); return; }
 
     G.gameTracks = shuffle([...tracks]); // Keep ALL tracks, always shuffled
-    G.playedIds = new Set(); // Track played songs to avoid repeats
+    G.playedIds = new Set(state.pi || []); // Track played songs to avoid repeats
     G.currentTrackIdx = 0; G.turnNum = 1; G.currentGuess = null; G.history = [];
-    G.players.forEach(p => { p.card=genCard(); p.marked=new Array(25).fill(null); p.markedSongs={}; p.score=0; p.bingos=0; });
+    G.players.forEach(p => { p.card=genCard(); p.marked=new Array(25).fill(null); p.markedSongs={}; p.bingos=0; });
 
     ls.style.display = 'none';
     saveState();
@@ -1204,7 +1203,7 @@ function renderPS() {
     const btn=document.createElement('div'); btn.className='ps-row';
     const cats=GUESSES.map(g=>`<span style="color:${g.color}">${g.emoji}${p.marked.filter(m=>m===g.id).length}</span>`).join(' ');
     btn.innerHTML=`<div class="ps-av" style="background:${p.color}20;color:${p.color};border:2px solid ${p.color}40">${p.name[0].toUpperCase()}</div>
-      <div class="ps-info"><div class="ps-name">${esc(p.name)}</div><div class="ps-sub">${p.score} pts · ${cats}</div></div>
+      <div class="ps-info"><div class="ps-name">${esc(p.name)}</div><div class="ps-sub">${cats}</div></div>
       <span style="color:var(--muted);font-size:17px">→</span>`;
     btn.onclick=()=>{ G.currentPlayer=i; goTo('bingo-card'); };
     grid.appendChild(btn);
@@ -1300,10 +1299,7 @@ function genCard() {
 function renderCard() {
   const p=G.players[G.currentPlayer];
   document.getElementById('bc-title').textContent=p.name;
-  const pts=document.getElementById('bc-pts');
-  pts.textContent=p.score+' pts';
   const g=G.selectedGenre;
-  pts.style.cssText=`padding:3px 9px;border-radius:20px;font-weight:700;font-size:11px;background:${g?g.color:'var(--g2)'};color:${g&&g.color==='#ffd600'?'#000':'#fff'}`;
 
   const leg=document.getElementById('bc-legend'); leg.innerHTML='';
   GUESSES.forEach(g=>{
@@ -1379,7 +1375,6 @@ function unmarkCell(idx) {
     return;
   }
   p.marked[idx]=null;
-  p.score=Math.max(0,p.score-10);
   if (p.markedSongs) delete p.markedSongs[idx];
   showToast('Case décochée');
   renderCard();
@@ -1390,7 +1385,7 @@ function markCell(idx) {
   const p=G.players[G.currentPlayer];
   if (p.marked[idx]) return;
   if (p.card[idx]!==G.currentGuess.id) { showToast('Mauvaise case !'); return; }
-  p.marked[idx]=G.currentGuess.id; p.score+=10;
+  p.marked[idx]=G.currentGuess.id;
   addToHistory(false); // correctly answered
   // Remember which song was marked
   if (!p.markedSongs) p.markedSongs = {};
@@ -1400,14 +1395,14 @@ function markCell(idx) {
   if (p.bingos>prevB) {
     const g=G.selectedGenre;
     document.getElementById('win-who').innerHTML=`${p.name} <span style="color:${g?g.color:'#ffb300'}">${g?g.emoji:''}</span>`;
-    document.getElementById('win-sub').textContent=`+${(p.bingos-prevB)*200} pts bonus · Total: ${p.score} pts`;
+    document.getElementById('win-sub').textContent=`+${p.bingos-prevB} bingo${p.bingos-prevB>1?'s':''} !`;
     goTo('win-screen');
   }
 }
 
 function getWinCells(p){ const s=new Set(); getLines().forEach(l=>{ if(l.every(i=>p.marked[i])) l.forEach(i=>s.add(i)); }); return [...s]; }
 function getLines(){ const L=[]; for(let r=0;r<5;r++) L.push([r*5,r*5+1,r*5+2,r*5+3,r*5+4]); for(let c=0;c<5;c++) L.push([c,c+5,c+10,c+15,c+20]); L.push([0,6,12,18,24]); L.push([4,8,12,16,20]); return L; }
-function checkBingo(p){ let n=0; getLines().forEach(l=>{ if(l.every(i=>p.marked[i])) n++; }); if(n>p.bingos){ p.bingos=n; p.score+=200; } }
+function checkBingo(p){ let n=0; getLines().forEach(l=>{ if(l.every(i=>p.marked[i])) n++; }); if(n>p.bingos){ p.bingos=n; } }
 
 // ═══════════════════════════════════════
 // LEADERBOARD
@@ -1415,7 +1410,7 @@ function checkBingo(p){ let n=0; getLines().forEach(l=>{ if(l.every(i=>p.marked[
 function renderLB(){
   const el=document.getElementById('lb-list');
   if(!G.players.length){ el.innerHTML='<p style="color:var(--muted);text-align:center;padding:28px 0">Aucune partie en cours.</p>'; return; }
-  const sorted=[...G.players].sort((a,b)=>b.score-a.score);
+  const sorted=[...G.players].sort((a,b)=>b.bingos-a.bingos);
   el.innerHTML='';
   ['🥇','🥈','🥉',4,5,6,7,8].forEach((m,i)=>{ if(!sorted[i]) return;
     const p=sorted[i]; const r=document.createElement('div'); r.className='lb-row';
@@ -1423,7 +1418,7 @@ function renderLB(){
     r.innerHTML=`<div class="lb-rank">${m}</div>
       <div class="lb-av" style="background:${p.color}20;color:${p.color};border:2px solid ${p.color}40">${p.name[0].toUpperCase()}</div>
       <div class="lb-info"><div class="lb-name">${esc(p.name)}</div><div class="lb-cats">${cats} · ${p.bingos} bingo${p.bingos!==1?'s':''}</div></div>
-      <div class="lb-score" style="color:${G.selectedGenre?.color||'var(--g2)'}">${p.score}<span style="font-size:9px;color:var(--muted)"> pts</span></div>`;
+      <div class="lb-score" style="color:${G.selectedGenre?.color||'var(--g2)'}">${p.bingos}<span style="font-size:9px;color:var(--muted)"> bingo${p.bingos!==1?'s':''}</span></div>`;
     el.appendChild(r);
   });
 }
@@ -1451,7 +1446,7 @@ function saveState() {
     const state = {
       g: G.selectedGenre,
       p: G.players.map(p => ({
-        n: p.name, c: p.color, s: p.score, b: p.bingos,
+        n: p.name, c: p.color, b: p.bingos,
         k: p.card, m: p.marked, ms: p.markedSongs || {}
       })),
       t: slimTracks,
@@ -1462,7 +1457,8 @@ function saveState() {
       u: G.currentPlayer,
       sc: document.querySelector('.screen.active')?.id || 'home',
       hs: G.hasSpun,
-      wa: wAngle
+      wa: wAngle,
+      pi: [...G.playedIds]
     };
     localStorage.setItem(SAVE_KEY, JSON.stringify(state));
   } catch(e) { console.warn('Save failed:', e.message); }
@@ -1477,7 +1473,7 @@ function restoreState() {
 
     G.selectedGenre = state.g;
     G.players = state.p.map(p => ({
-      name: p.n, color: p.c, score: p.s, bingos: p.b,
+      name: p.n, color: p.c, bingos: p.b,
       card: p.k, marked: p.m, markedSongs: p.ms || {}
     }));
     // Decompress tracks
@@ -1494,7 +1490,7 @@ function restoreState() {
     G.currentPlayer = state.u || 0;
     G.hasSpun = state.hs || false;
     if (state.wa) wAngle = state.wa;
-    G.playedIds = new Set();
+    G.playedIds = new Set(state.pi || []);
 
     // Go to the saved screen (but not play-screen — restart from spin)
     const screen = state.sc;
